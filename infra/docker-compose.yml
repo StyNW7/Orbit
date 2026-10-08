@@ -1,0 +1,75 @@
+# Orbit local infrastructure
+#
+#   docker compose -f infra/docker-compose.yml up -d        (or: pnpm infra:up)
+#   docker compose -f infra/docker-compose.yml down         (or: pnpm infra:down)
+#   docker compose -f infra/docker-compose.yml logs -f      (or: pnpm infra:logs)
+#
+# The web app and NestJS API run on the host for fast hot reload.
+# `postgres` is a local stand-in for Supabase PostgreSQL (pgvector enabled).
+# If you use a hosted Supabase project you can skip it: `pnpm infra:up:ai`.
+
+name: orbit
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: orbit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orbit
+      POSTGRES_PASSWORD: orbit
+      POSTGRES_DB: orbit
+    ports:
+      - "54322:5432"
+    volumes:
+      - orbit-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbit -d orbit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:0.40.1
+    container_name: orbit-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - orbit-ollama:/root/.ollama
+    # Optional NVIDIA GPU acceleration (Docker Desktop + WSL2 or NVIDIA Container Toolkit).
+    # Requires a recent NVIDIA driver (CUDA 12+). Uncomment to enable:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  langflow:
+    image: langflowai/langflow:1.12.5
+    container_name: orbit-langflow
+    restart: unless-stopped
+    ports:
+      - "7861:7860"
+    environment:
+      LANGFLOW_AUTO_LOGIN: "true"
+      LANGFLOW_SKIP_AUTH_AUTO_LOGIN: "true"
+      LANGFLOW_CONFIG_DIR: /app/langflow
+      LANGFLOW_COMPONENTS_PATH: /app/orbit-components
+      # Orbit tool components call back into the NestJS API running on the host.
+      ORBIT_API_URL: ${ORBIT_API_URL_FOR_LANGFLOW:-http://host.docker.internal:4000/api}
+      ORBIT_TOOL_API_KEY: ${ORBIT_TOOL_API_KEY:-change-me-orbit-tool-key}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - orbit-langflow:/app/langflow
+      - ../ai/langflow/custom-components:/app/orbit-components:ro
+    depends_on:
+      - ollama
+
+volumes:
+  orbit-pg:
+  orbit-ollama:
+  orbit-langflow:

@@ -1,0 +1,1114 @@
+// =============================================================
+// Orbit — PostgreSQL schema (Supabase compatible, pgvector enabled)
+// PostgreSQL is the long-term memory and the single source of truth.
+// The Career Graph lives here too (GraphNode / GraphEdge) — no Neo4j.
+// =============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector, pgcrypto]
+}
+
+// -------------------------------------------------------------
+// Enums
+// -------------------------------------------------------------
+
+enum AuthProvider {
+  LOCAL
+  SUPABASE
+}
+
+enum ExtractionSource {
+  AI
+  HEURISTIC
+  MANUAL
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum OpportunityType {
+  FULL_TIME
+  INTERNSHIP
+  GRADUATE_PROGRAM
+  PART_TIME
+}
+
+enum ExperienceType {
+  WORK
+  INTERNSHIP
+  ORGANIZATION
+  PROJECT
+  COMPETITION
+  VOLUNTEER
+  LEADERSHIP
+  RESEARCH
+}
+
+enum AchievementType {
+  AWARD
+  CERTIFICATION
+  PUBLICATION
+}
+
+enum SkillCategory {
+  PRODUCT
+  DATA
+  ENGINEERING
+  AI
+  DESIGN
+  BUSINESS
+  SOFT_SKILL
+}
+
+enum SkillSource {
+  CV
+  USER
+  QUEST
+  AGENT
+}
+
+enum GoalStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum JourneyStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum QuestCategory {
+  SKILL
+  PROJECT
+  PORTFOLIO
+  EXPERIENCE
+  KNOWLEDGE
+  CERTIFICATION
+  APPLICATION
+  INTERVIEW
+  NETWORKING
+}
+
+enum ReadinessCategory {
+  SKILL
+  EXPERIENCE
+  PORTFOLIO
+  KNOWLEDGE
+  APPLICATION
+  INTERVIEW
+}
+
+enum ContentSource {
+  TEMPLATE
+  AGENT
+  USER
+}
+
+enum EvidenceType {
+  URL
+  FILE
+  TEXT
+  GITHUB
+  PORTFOLIO
+  CERTIFICATE
+}
+
+enum EvidenceReviewStatus {
+  PENDING
+  REVIEWED
+  SKIPPED
+}
+
+enum FilePurpose {
+  CV
+  EVIDENCE
+  CERTIFICATE
+  DOCUMENT
+}
+
+enum StorageProvider {
+  SUPABASE
+  LOCAL
+}
+
+enum Seniority {
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum SavedKind {
+  OPPORTUNITY
+  BOOK
+  PAPER
+  EVENT
+  RESOURCE
+  ROLE_MODEL
+}
+
+enum SavedStatus {
+  SAVED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ApplicationStatus {
+  SAVED
+  PREPARING
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum InterviewStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PersonKind {
+  ROLE_MODEL
+  MENTOR
+}
+
+enum EventType {
+  WORKSHOP
+  SEMINAR
+  CONFERENCE
+  COMPETITION
+  HACKATHON
+  BOOTCAMP
+  CAREER_EVENT
+}
+
+enum ResourceType {
+  COURSE
+  CERTIFICATION
+  ARTICLE
+  LEARNING_RESOURCE
+}
+
+enum NoteType {
+  INTERVIEW_REFLECTION
+  LEARNING_REFLECTION
+  CAREER_THOUGHT
+  EXPERIENCE_UPDATE
+  PERSONAL_DEVELOPMENT
+}
+
+enum NotificationType {
+  JOB_DEADLINE
+  EVENT_REMINDER
+  QUEST_DEADLINE
+  SAVED_OPPORTUNITY
+  WEEKLY_REVIEW
+  INACTIVE_JOURNEY
+  APPLICATION_FOLLOW_UP
+  CUSTOM_REMINDER
+  INSIGHT
+  SYSTEM
+}
+
+enum NotificationStatus {
+  SCHEDULED
+  DELIVERED
+  READ
+  DISMISSED
+}
+
+enum NodeType {
+  USER
+  CAREER_ROLE
+  SKILL
+  EXPERIENCE
+  OPPORTUNITY
+  MENTOR
+  ROLE_MODEL
+  PAPER
+  BOOK
+  COURSE
+  EVENT
+  CERTIFICATION
+  COMPETITION
+  PROJECT
+  QUEST
+  GAP
+  GOAL
+}
+
+enum EdgeRelationship {
+  TARGETS
+  HAS_SKILL
+  HAS_EXPERIENCE
+  REQUIRES
+  RECOMMENDED_FOR
+  IMPROVES
+  RELATED_TO
+  SUPPORTS
+  PART_OF
+  APPLIED_TO
+  LEARNED_FROM
+  INSPIRED_BY
+}
+
+enum GraphSource {
+  SYSTEM
+  USER
+  AGENT
+}
+
+enum AgentMessageRole {
+  USER
+  ASSISTANT
+}
+
+enum AgentActionLevel {
+  READ
+  SUGGEST
+  WRITE
+}
+
+enum AgentActionStatus {
+  EXECUTED
+  SUGGESTED
+  PENDING_CONFIRMATION
+  CONFIRMED
+  REJECTED
+  FAILED
+}
+
+enum InsightType {
+  PATTERN
+  GAP
+  STRENGTH
+  OPPORTUNITY
+  INTERVIEW
+  PROGRESS
+}
+
+enum InsightStatus {
+  ACTIVE
+  DISMISSED
+  ACTED
+}
+
+enum ActivityType {
+  PROFILE_ANALYZED
+  GOAL_SET
+  JOURNEY_STARTED
+  TASK_COMPLETED
+  QUEST_COMPLETED
+  MILESTONE_COMPLETED
+  EVIDENCE_SUBMITTED
+  SKILL_ACQUIRED
+  EXPERIENCE_ADDED
+  APPLICATION_UPDATED
+  INTERVIEW_PRACTICED
+  NOTE_WRITTEN
+  RESOURCE_COMPLETED
+  READINESS_MILESTONE
+}
+
+// -------------------------------------------------------------
+// Identity & profile
+// -------------------------------------------------------------
+
+model User {
+  id           String       @id @default(uuid()) @db.Uuid
+  email        String       @unique
+  name         String
+  avatarUrl    String?
+  authProvider AuthProvider @default(LOCAL)
+  passwordHash String?
+  xp           Int          @default(0)
+  lastActiveAt DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  profile            CareerProfile?
+  education          Education[]
+  experiences        Experience[]
+  achievements       Achievement[]
+  skills             UserSkill[]
+  goals              CareerGoal[]
+  journeys           CareerJourney[]
+  quests             Quest[]
+  questProgress      QuestProgress[]
+  evidence           QuestEvidence[]
+  files              StoredFile[]
+  saved              SavedOpportunity[]
+  applications       Application[]
+  interviews         InterviewSession[]
+  notes              CareerNote[]
+  notifications      Notification[]
+  graphNodes         GraphNode[]
+  graphEdges         GraphEdge[]
+  readinessSnapshots ReadinessSnapshot[]
+  conversations      AgentConversation[]
+  insights           AgentInsight[]
+  agentActions       AgentAction[]
+  activities         ActivityLog[]
+}
+
+model CareerProfile {
+  id                  String            @id @default(uuid()) @db.Uuid
+  userId              String            @unique @db.Uuid
+  headline            String?
+  summary             String?
+  currentStatus       String?
+  university          String?
+  major               String?
+  graduationYear      Int?
+  location            String?
+  interests           String[]          @default([])
+  preferredIndustries String[]          @default([])
+  preferredWorkModes  WorkMode[]        @default([])
+  preferredLocations  String[]          @default([])
+  preferredRoleTypes  OpportunityType[] @default([])
+  additionalContext   String?
+  linkedinUrl         String?
+  portfolioUrl        String?
+  githubUrl           String?
+  cvFileId            String?           @unique @db.Uuid
+  cvText              String?
+  cvParsedAt          DateTime?
+  extractionSource    ExtractionSource?
+  onboardingCompleted Boolean           @default(false)
+  embedding           Unsupported("vector(768)")?
+  embeddingModel      String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cvFile StoredFile? @relation(fields: [cvFileId], references: [id], onDelete: SetNull)
+}
+
+model Education {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  institution String
+  degree      String?
+  field       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  gpa         String?
+  description String?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Experience {
+  id           String         @id @default(uuid()) @db.Uuid
+  userId       String         @db.Uuid
+  type         ExperienceType
+  title        String
+  organization String
+  description  String?
+  startDate    DateTime?
+  endDate      DateTime?
+  current      Boolean        @default(false)
+  skills       String[]       @default([])
+  achievements String[]       @default([])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Achievement {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String          @db.Uuid
+  type      AchievementType
+  title     String
+  issuer    String?
+  date      DateTime?
+  url       String?
+  createdAt DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// Skills & career roles
+// -------------------------------------------------------------
+
+model Skill {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String        @unique
+  slug        String        @unique
+  category    SkillCategory
+  description String?
+  aliases     String[]      @default([])
+  createdAt   DateTime      @default(now())
+
+  userSkills   UserSkill[]
+  requirements RoleSkillRequirement[]
+  quests       Quest[]
+}
+
+model UserSkill {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @db.Uuid
+  skillId   String      @db.Uuid
+  /// proficiency 0–100
+  level     Int
+  source    SkillSource @default(USER)
+  evidence  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+}
+
+model CareerRole {
+  id                String   @id @default(uuid()) @db.Uuid
+  slug              String   @unique
+  title             String
+  family            String
+  description       String
+  icon              String   @default("briefcase-business")
+  keywords          String[] @default([])
+  /// [{ id, label, types: ExperienceType[], keywords: string[], weight }]
+  experienceSignals Json     @default("[]")
+  /// [{ key, title, description, impact, skillSlug?, quests: [...] }]
+  journeyTemplate   Json     @default("[]")
+  createdAt         DateTime @default(now())
+
+  requirements RoleSkillRequirement[]
+  goals        CareerGoal[]
+}
+
+model RoleSkillRequirement {
+  id            String @id @default(uuid()) @db.Uuid
+  roleId        String @db.Uuid
+  skillId       String @db.Uuid
+  requiredLevel Int
+  /// 1 (nice to have) – 5 (critical)
+  importance    Int
+
+  role  CareerRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  skill Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, skillId])
+}
+
+model CareerGoal {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid
+  roleId     String     @db.Uuid
+  isPrimary  Boolean    @default(false)
+  status     GoalStatus @default(ACTIVE)
+  motivation String?
+  targetDate DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role               CareerRole          @relation(fields: [roleId], references: [id])
+  journey            CareerJourney?
+  readinessSnapshots ReadinessSnapshot[]
+
+  @@unique([userId, roleId])
+}
+
+// -------------------------------------------------------------
+// Adaptive Career Journey
+// -------------------------------------------------------------
+
+model CareerJourney {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @db.Uuid
+  goalId         String        @unique @db.Uuid
+  title          String
+  status         JourneyStatus @default(ACTIVE)
+  lastProgressAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal       CareerGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  milestones Milestone[]
+
+  @@index([userId])
+}
+
+model Milestone {
+  id          String             @id @default(uuid()) @db.Uuid
+  journeyId   String             @db.Uuid
+  key         String
+  title       String
+  description String?
+  order       Int
+  status      ProgressStatus     @default(NOT_STARTED)
+  impact      ReadinessCategory?
+  skillId     String?            @db.Uuid
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+
+  journey CareerJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  quests  Quest[]
+
+  @@unique([journeyId, key])
+}
+
+model Quest {
+  id                  String            @id @default(uuid()) @db.Uuid
+  milestoneId         String            @db.Uuid
+  userId              String            @db.Uuid
+  key                 String
+  title               String
+  description         String
+  objective           String?
+  category            QuestCategory
+  impact              ReadinessCategory
+  relatedSkillId      String?           @db.Uuid
+  /// proficiency points granted to the related skill at 100% progress
+  skillGain           Int               @default(0)
+  estimatedEffort     String
+  xp                  Int
+  status              ProgressStatus    @default(NOT_STARTED)
+  progress            Int               @default(0)
+  evidenceRequirement String?
+  evidenceRequired    Boolean           @default(false)
+  deadline            DateTime?
+  order               Int               @default(0)
+  source              ContentSource     @default(TEMPLATE)
+  /// [{ title, url, kind }]
+  resources           Json              @default("[]")
+  completedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  milestone    Milestone       @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedSkill Skill?          @relation(fields: [relatedSkillId], references: [id], onDelete: SetNull)
+  tasks        QuestTask[]
+  progressLog  QuestProgress[]
+  evidence     QuestEvidence[]
+
+  @@unique([milestoneId, key])
+  @@index([userId, status])
+}
+
+model QuestTask {
+  id          String    @id @default(uuid()) @db.Uuid
+  questId     String    @db.Uuid
+  title       String
+  order       Int
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+}
+
+/// Append-only log of quest progress changes (drives streaks and history).
+model QuestProgress {
+  id             String   @id @default(uuid()) @db.Uuid
+  questId        String   @db.Uuid
+  userId         String   @db.Uuid
+  taskId         String?  @db.Uuid
+  progressBefore Int
+  progressAfter  Int
+  note           String?
+  createdAt      DateTime @default(now())
+
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model QuestEvidence {
+  id           String               @id @default(uuid()) @db.Uuid
+  questId      String               @db.Uuid
+  userId       String               @db.Uuid
+  type         EvidenceType
+  url          String?
+  text         String?
+  fileId       String?              @db.Uuid
+  aiReview     String?
+  reviewStatus EvidenceReviewStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+
+  quest Quest       @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  file  StoredFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+}
+
+model StoredFile {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String          @db.Uuid
+  provider  StorageProvider
+  bucket    String
+  path      String
+  filename  String
+  mimeType  String
+  size      Int
+  purpose   FilePurpose
+  createdAt DateTime        @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileCv CareerProfile?
+  evidence  QuestEvidence[]
+}
+
+// -------------------------------------------------------------
+// Opportunity Intelligence
+// -------------------------------------------------------------
+
+model Opportunity {
+  id             String          @id @default(uuid()) @db.Uuid
+  source         String
+  externalId     String?
+  dedupeKey      String          @unique
+  title          String
+  company        String
+  description    String
+  location       String
+  workMode       WorkMode
+  employmentType OpportunityType
+  seniority      Seniority       @default(ENTRY)
+  skills         String[]        @default([])
+  roleSlugs      String[]        @default([])
+  industry       String?
+  applyUrl       String?
+  salaryRange    String?
+  isDemo         Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  publishedAt    DateTime?
+  expiresAt      DateTime?
+  deadline       DateTime?
+  fetchedAt      DateTime        @default(now())
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  saved        SavedOpportunity[]
+  applications Application[]
+
+  @@index([source, externalId])
+}
+
+model Book {
+  id             String   @id @default(uuid()) @db.Uuid
+  source         String
+  externalId     String?
+  dedupeKey      String   @unique
+  title          String
+  authors        String[] @default([])
+  description    String
+  coverUrl       String?
+  publishedYear  Int?
+  pageCount      Int?
+  level          String?
+  infoUrl        String?
+  skills         String[] @default([])
+  roleSlugs      String[] @default([])
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime @default(now())
+
+  saved SavedOpportunity[]
+}
+
+model ResearchPaper {
+  id             String   @id @default(uuid()) @db.Uuid
+  source         String
+  externalId     String?
+  dedupeKey      String   @unique
+  title          String
+  authors        String[] @default([])
+  year           Int?
+  venue          String?
+  abstract       String
+  url            String?
+  doi            String?
+  citationCount  Int?
+  skills         String[] @default([])
+  roleSlugs      String[] @default([])
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime @default(now())
+
+  saved SavedOpportunity[]
+}
+
+model Event {
+  id                   String    @id @default(uuid()) @db.Uuid
+  source               String
+  dedupeKey            String    @unique
+  title                String
+  type                 EventType
+  organizer            String
+  description          String
+  startsAt             DateTime
+  endsAt               DateTime?
+  registrationDeadline DateTime?
+  location             String?
+  isOnline             Boolean   @default(false)
+  url                  String?
+  cost                 String?
+  skills               String[]  @default([])
+  roleSlugs            String[]  @default([])
+  isDemo               Boolean   @default(false)
+  embedding            Unsupported("vector(768)")?
+  embeddingModel       String?
+  createdAt            DateTime  @default(now())
+
+  saved SavedOpportunity[]
+}
+
+model Resource {
+  id             String       @id @default(uuid()) @db.Uuid
+  source         String
+  dedupeKey      String       @unique
+  title          String
+  type           ResourceType
+  provider       String
+  description    String
+  url            String?
+  durationHours  Int?
+  level          String?
+  cost           String?
+  skills         String[]     @default([])
+  roleSlugs      String[]     @default([])
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime     @default(now())
+
+  saved SavedOpportunity[]
+}
+
+model RoleModel {
+  id                String     @id @default(uuid()) @db.Uuid
+  slug              String     @unique
+  kind              PersonKind @default(ROLE_MODEL)
+  name              String
+  headline          String
+  careerSummary     String
+  /// [{ label, url }]
+  publicSources     Json       @default("[]")
+  skills            String[]   @default([])
+  expertise         String[]   @default([])
+  /// [{ period, title, organization }]
+  careerTransitions Json       @default("[]")
+  relatedRoleSlugs  String[]   @default([])
+  /// experience types that characterised their early career (for comparison)
+  earlyCareerSignals String[]  @default([])
+  location          String?
+  availability      String?
+  isDemo            Boolean    @default(false)
+  embedding         Unsupported("vector(768)")?
+  embeddingModel    String?
+  createdAt         DateTime   @default(now())
+
+  saved SavedOpportunity[]
+}
+
+/// One table for everything a user saves from Discover (jobs, books, papers, events, resources, people).
+model SavedOpportunity {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  kind          SavedKind
+  status        SavedStatus @default(SAVED)
+  opportunityId String?     @db.Uuid
+  bookId        String?     @db.Uuid
+  paperId       String?     @db.Uuid
+  eventId       String?     @db.Uuid
+  resourceId    String?     @db.Uuid
+  roleModelId   String?     @db.Uuid
+  note          String?
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity?   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  book        Book?          @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  paper       ResearchPaper? @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  event       Event?         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  resource    Resource?      @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  roleModel   RoleModel?     @relation(fields: [roleModelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+  @@unique([userId, bookId])
+  @@unique([userId, paperId])
+  @@unique([userId, eventId])
+  @@unique([userId, resourceId])
+  @@unique([userId, roleModelId])
+  @@index([userId, kind])
+}
+
+model Application {
+  id            String            @id @default(uuid()) @db.Uuid
+  userId        String            @db.Uuid
+  opportunityId String            @db.Uuid
+  status        ApplicationStatus @default(SAVED)
+  matchScore    Int               @default(0)
+  deadline      DateTime?
+  appliedAt     DateTime?
+  notes         String?
+  /// [{ id, label, done }]
+  prepChecklist Json              @default("[]")
+  /// [{ status, at }]
+  statusHistory Json              @default("[]")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity        @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  interviews  InterviewSession[]
+
+  @@unique([userId, opportunityId])
+}
+
+model InterviewSession {
+  id            String          @id @default(uuid()) @db.Uuid
+  userId        String          @db.Uuid
+  applicationId String?         @db.Uuid
+  roleTitle     String
+  company       String?
+  status        InterviewStatus @default(IN_PROGRESS)
+  /// [{ id, question, focus, answer, feedback }]
+  questions     Json            @default("[]")
+  /// { communication, structure, roleKnowledge, examples, confidence } — coaching indicators, not exact metrics
+  scores        Json?
+  summary       String?
+  generatedBy   String          @default("TEMPLATE")
+  createdAt     DateTime        @default(now())
+  completedAt   DateTime?
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+}
+
+// -------------------------------------------------------------
+// Journal, notifications
+// -------------------------------------------------------------
+
+model CareerNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  type      NoteType
+  title     String
+  content   String
+  tags      String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  type        NotificationType
+  title       String
+  message     String
+  actionUrl   String?
+  scheduledAt DateTime           @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
+  status      NotificationStatus @default(DELIVERED)
+  dedupeKey   String?
+  createdAt   DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, status, scheduledAt])
+}
+
+// -------------------------------------------------------------
+// Career Universe graph (PostgreSQL adjacency model)
+// -------------------------------------------------------------
+
+model GraphNode {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @db.Uuid
+  /// stable identity, e.g. "skill:product-analytics"
+  key          String
+  type         NodeType
+  label        String
+  description  String?
+  metadataJson Json        @default("{}")
+  source       GraphSource @default(SYSTEM)
+  confidence   Float       @default(1)
+  entityId     String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outEdges GraphEdge[] @relation("EdgeSource")
+  inEdges  GraphEdge[] @relation("EdgeTarget")
+
+  @@unique([userId, key])
+  @@index([userId, type])
+}
+
+model GraphEdge {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @db.Uuid
+  sourceNodeId String           @db.Uuid
+  targetNodeId String           @db.Uuid
+  relationship EdgeRelationship
+  weight       Float            @default(1)
+  metadataJson Json             @default("{}")
+  source       GraphSource      @default(SYSTEM)
+  createdAt    DateTime         @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceNode GraphNode @relation("EdgeSource", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode GraphNode @relation("EdgeTarget", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceNodeId, targetNodeId, relationship])
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// Readiness, activity
+// -------------------------------------------------------------
+
+model ReadinessSnapshot {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  goalId    String?  @db.Uuid
+  roleSlug  String
+  score     Float
+  /// { SKILL: 0-100, EXPERIENCE: ..., ... }
+  breakdown Json
+  trigger   String
+  createdAt DateTime @default(now())
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal CareerGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([userId, roleSlug, createdAt])
+}
+
+model ActivityLog {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  type        ActivityType
+  title       String
+  description String?
+  xp          Int          @default(0)
+  metadata    Json         @default("{}")
+  createdAt   DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// -------------------------------------------------------------
+// Orbit Career Agent
+// -------------------------------------------------------------
+
+model AgentConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AgentMessage[]
+  actions  AgentAction[]
+
+  @@index([userId, updatedAt])
+}
+
+model AgentMessage {
+  id             String           @id @default(uuid()) @db.Uuid
+  conversationId String           @db.Uuid
+  role           AgentMessageRole
+  content        String
+  /// { engine, toolCalls, actionIds, pageContext }
+  metadata       Json             @default("{}")
+  createdAt      DateTime         @default(now())
+
+  conversation AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model AgentInsight {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @db.Uuid
+  type            InsightType
+  title           String
+  message         String
+  evidence        Json          @default("[]")
+  suggestedAction Json?
+  status          InsightStatus @default(ACTIVE)
+  dedupeKey       String?
+  createdAt       DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, status])
+}
+
+/// Audit trail of agent tool use and human-in-the-loop confirmations.
+model AgentAction {
+  id                   String            @id @default(uuid()) @db.Uuid
+  userId               String            @db.Uuid
+  conversationId       String?           @db.Uuid
+  messageId            String?           @db.Uuid
+  type                 String
+  tool                 String
+  level                AgentActionLevel
+  title                String
+  description          String
+  inputSummary         String
+  outputSummary        String?
+  payload              Json              @default("{}")
+  status               AgentActionStatus
+  confirmationRequired Boolean           @default(false)
+  confirmedAt          DateTime?
+  executedAt           DateTime?
+  error                String?
+  createdAt            DateTime          @default(now())
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation AgentConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}

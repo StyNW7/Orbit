@@ -1,0 +1,82 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 3651 >>
+stream
+BT /F2 20 Tf 56 790 Td (RAKA PRATAMA) Tj ET
+BT /F1 10 Tf 56 768 Td (Computer Science Student | Aspiring Product Manager) Tj ET
+BT /F1 10 Tf 56 754 Td (Jakarta, Indonesia | raka.pratama.demo@example.com | linkedin.com/in/raka-pratama-demo | github.com/raka-pratama-demo) Tj ET
+BT /F2 11 Tf 56 728 Td (SUMMARY) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 724 m 539 724 l S
+BT /F1 9.5 Tf 56 711 Td (Computer Science student who enjoys turning messy problems into products people use. Led a 12-person) Tj ET
+BT /F1 9.5 Tf 56 698 Td (technology division, shipped a campus event app used by 1,200 students, and reached the finals of a) Tj ET
+BT /F1 9.5 Tf 56 685 Td (national hackathon. Looking for a Product Management internship.) Tj ET
+BT /F2 11 Tf 56 660 Td (EDUCATION) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 656 m 539 656 l S
+BT /F2 9.5 Tf 56 643 Td (Bina Nusantara University - Bachelor of Computer Science) Tj ET
+BT /F2 9.5 Tf 56 630 Td (Aug 2023 - Jul 2027) Tj ET
+BT /F1 9.5 Tf 56 617 Td (GPA 3.72 / 4.00. Relevant courses: Software Engineering, Database Systems, Human-Computer) Tj ET
+BT /F1 9.5 Tf 56 604 Td (Interaction, Statistics.) Tj ET
+BT /F2 11 Tf 56 579 Td (EXPERIENCE) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 575 m 539 575 l S
+BT /F2 9.5 Tf 56 562 Td (Teaching Assistant, Algorithm and Programming - Bina Nusantara University) Tj ET
+BT /F2 9.5 Tf 56 549 Td (Feb 2025 - Jan 2026) Tj ET
+BT /F1 9.5 Tf 64 536 Td (- Mentored 40 first-year students in weekly lab sessions on algorithms and data structures) Tj ET
+BT /F1 9.5 Tf 64 523 Td (- Explained programming concepts clearly and gave structured feedback on assignments) Tj ET
+BT /F2 11 Tf 56 498 Td (ORGANIZATIONAL EXPERIENCE) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 494 m 539 494 l S
+BT /F2 9.5 Tf 56 481 Td (Head of Technology Division - Computer Science Student Association) Tj ET
+BT /F2 9.5 Tf 56 468 Td (Sep 2024 - Present) Tj ET
+BT /F1 9.5 Tf 64 455 Td (- Led a team of 12 developers and designers maintaining the association event platform) Tj ET
+BT /F1 9.5 Tf 64 442 Td (- Coordinated with 5 divisions to plan a quarterly roadmap and prioritize feature requests) Tj ET
+BT /F1 9.5 Tf 64 429 Td (- Organized 4 tech workshops for more than 300 students and presented at 2 of them) Tj ET
+BT /F2 11 Tf 56 404 Td (PROJECTS) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 400 m 539 400 l S
+BT /F2 9.5 Tf 56 387 Td (Campus Event App - Team Lead and Full-Stack Developer) Tj ET
+BT /F2 9.5 Tf 56 374 Td (Feb 2025 - Jun 2025) Tj ET
+BT /F1 9.5 Tf 64 361 Td (- Built a React and Node.js web app with a PostgreSQL database and REST APIs, used by 1,200 students) Tj ET
+BT /F1 9.5 Tf 64 348 Td (- Interviewed 15 students to understand pain points and prioritized the backlog with the team) Tj ET
+BT /F1 9.5 Tf 64 335 Td (- Shipped 3 iterations in agile sprints using Git and GitHub) Tj ET
+BT /F2 11 Tf 56 310 Td (COMPETITIONS) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 306 m 539 306 l S
+BT /F2 9.5 Tf 56 293 Td (Finalist - National Student Hackathon 2025) Tj ET
+BT /F1 9.5 Tf 56 280 Td (Oct 2025) Tj ET
+BT /F1 9.5 Tf 64 267 Td (- Built a payment-reminder prototype for small merchants in 36 hours and pitched it to industry) Tj ET
+BT /F1 9.5 Tf 64 254 Td (  judges) Tj ET
+BT /F2 11 Tf 56 229 Td (CERTIFICATIONS) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 225 m 539 225 l S
+BT /F2 9.5 Tf 56 212 Td (IBM SkillsBuild - Artificial Intelligence Fundamentals, 2026) Tj ET
+BT /F2 11 Tf 56 187 Td (SKILLS) Tj ET
+0.04 0.71 0.42 RG 0.8 w 56 183 m 539 183 l S
+BT /F1 9.5 Tf 56 170 Td (JavaScript, TypeScript, React, Node.js, Python, Git, REST APIs, PostgreSQL, Figma, Agile and Scrum,) Tj ET
+BT /F1 9.5 Tf 56 157 Td (Leadership, Public speaking, Data analysis basics) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000003954 00000 n 
+0000004051 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+4153
+%%EOF

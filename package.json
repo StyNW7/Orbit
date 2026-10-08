@@ -1,0 +1,40 @@
+{
+  "name": "orbit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Orbit \u2014 Build Your Path. Become Career-Ready. An agentic career & personal growth platform.",
+  "packageManager": "pnpm@9.3.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @orbit/shared build && concurrently -n shared,api,web -c gray,green,yellow \"pnpm --filter @orbit/shared dev\" \"pnpm --filter @orbit/api dev\" \"pnpm --filter @orbit/web dev\"",
+    "dev:api": "pnpm --filter @orbit/api dev",
+    "dev:web": "pnpm --filter @orbit/web dev",
+    "build": "pnpm --filter @orbit/shared build && pnpm --filter @orbit/api build && pnpm --filter @orbit/web build",
+    "start": "pnpm --filter @orbit/api start",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm --filter @orbit/shared build && pnpm -r typecheck",
+    "test": "pnpm --filter @orbit/shared build && pnpm --filter @orbit/api test",
+    "db:generate": "pnpm --filter @orbit/api db:generate",
+    "db:migrate": "pnpm --filter @orbit/api db:migrate",
+    "db:deploy": "pnpm --filter @orbit/api db:deploy",
+    "db:seed": "pnpm --filter @orbit/shared build && pnpm --filter @orbit/api db:seed",
+    "db:reset": "pnpm --filter @orbit/api db:reset",
+    "db:studio": "pnpm --filter @orbit/api db:studio",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:up:ai": "docker compose -f infra/docker-compose.yml up -d ollama langflow",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:logs": "docker compose -f infra/docker-compose.yml logs -f",
+    "ollama:pull": "docker exec orbit-ollama ollama pull granite3.3:2b && docker exec orbit-ollama ollama pull nomic-embed-text"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "~5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "react-is": "^19.0.0"
+    }
+  }
+}

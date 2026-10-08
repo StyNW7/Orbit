@@ -1,0 +1,42 @@
+RAKA PRATAMA
+Computer Science Student | Aspiring Product Manager
+Jakarta, Indonesia | raka.pratama.demo@example.com | linkedin.com/in/raka-pratama-demo | github.com/raka-pratama-demo
+
+SUMMARY
+Computer Science student who enjoys turning messy problems into products people use. Led a 12-person technology division, shipped a campus event app used by 1,200 students, and reached the finals of a national hackathon. Looking for a Product Management internship.
+
+EDUCATION
+Bina Nusantara University - Bachelor of Computer Science
+Aug 2023 - Jul 2027
+GPA 3.72 / 4.00. Relevant courses: Software Engineering, Database Systems, Human-Computer Interaction, Statistics.
+
+EXPERIENCE
+Teaching Assistant, Algorithm and Programming - Bina Nusantara University
+Feb 2025 - Jan 2026
+- Mentored 40 first-year students in weekly lab sessions on algorithms and data structures
+- Explained programming concepts clearly and gave structured feedback on assignments
+
+ORGANIZATIONAL EXPERIENCE
+Head of Technology Division - Computer Science Student Association
+Sep 2024 - Present
+- Led a team of 12 developers and designers maintaining the association event platform
+- Coordinated with 5 divisions to plan a quarterly roadmap and prioritize feature requests
+- Organized 4 tech workshops for more than 300 students and presented at 2 of them
+
+PROJECTS
+Campus Event App - Team Lead and Full-Stack Developer
+Feb 2025 - Jun 2025
+- Built a React and Node.js web app with a PostgreSQL database and REST APIs, used by 1,200 students
+- Interviewed 15 students to understand pain points and prioritized the backlog with the team
+- Shipped 3 iterations in agile sprints using Git and GitHub
+
+COMPETITIONS
+Finalist - National Student Hackathon 2025
+Oct 2025
+- Built a payment-reminder prototype for small merchants in 36 hours and pitched it to industry judges
+
+CERTIFICATIONS
+IBM SkillsBuild - Artificial Intelligence Fundamentals, 2026
+
+SKILLS
+JavaScript, TypeScript, React, Node.js, Python, Git, REST APIs, PostgreSQL, Figma, Agile and Scrum, Leadership, Public speaking, Data analysis basics

@@ -1,0 +1,17 @@
+{
+  "extends": "@orbit/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+    "isolatedModules": false,
+    "incremental": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*", "prisma/**/*.ts", "test/**/*"]
+}
