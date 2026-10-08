@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AppConfig } from '../../config/app-config';
 
 const HEALTH_TTL_MS = 30_000;
+/** After a failed or timed-out run, chats skip Langflow for a while instead of waiting on it again. */
+const FAILURE_COOLDOWN_MS = 5 * 60_000;
 
 /**
  * Thin client for Langflow's stable run endpoint:  POST /api/v1/run/{flowId}
@@ -11,6 +13,7 @@ const HEALTH_TTL_MS = 30_000;
 export class LangflowClient {
   private readonly logger = new Logger('Langflow');
   private health: { ok: boolean; at: number } | null = null;
+  private cooldownUntil = 0;
 
   constructor(private readonly config: AppConfig) {}
 
@@ -30,6 +33,7 @@ export class LangflowClient {
 
   async isReachable(force = false): Promise<boolean> {
     if (!this.configured) return false;
+    if (!force && this.cooldownUntil > Date.now()) return false;
     if (!force && this.health && Date.now() - this.health.at < HEALTH_TTL_MS) return this.health.ok;
     let ok = false;
     try {
@@ -65,6 +69,7 @@ export class LangflowClient {
       return message;
     } catch (error) {
       this.health = { ok: false, at: Date.now() };
+      this.cooldownUntil = Date.now() + FAILURE_COOLDOWN_MS;
       throw new Error((error as Error).name === 'AbortError' ? 'Langflow timed out' : (error as Error).message);
     } finally {
       clearTimeout(timer);

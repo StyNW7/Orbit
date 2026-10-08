@@ -144,7 +144,7 @@ async function demoUserId(): Promise<{ id: string; provider: 'LOCAL' | 'SUPABASE
       email: DEMO_EMAIL,
       password: DEMO_PASSWORD,
       email_confirm: true,
-      user_metadata: { name: 'Raka Pratama' },
+      user_metadata: { name: 'Stanley Wijaya' },
     });
     if (error || !data.user) throw new Error(`Could not create Supabase demo user: ${error?.message}`);
     return { id: data.user.id, provider: 'SUPABASE' };
@@ -163,7 +163,7 @@ async function seedDemoUser(app: Awaited<ReturnType<typeof NestFactory.createApp
     data: {
       id,
       email: DEMO_EMAIL,
-      name: 'Raka Pratama',
+      name: 'Stanley Wijaya',
       authProvider: provider,
       passwordHash: provider === 'LOCAL' ? await bcrypt.hash(DEMO_PASSWORD, 10) : null,
       createdAt: daysAgo(150),
@@ -189,8 +189,8 @@ async function seedDemoUser(app: Awaited<ReturnType<typeof NestFactory.createApp
       preferredLocations: ['Jakarta'],
       preferredRoleTypes: ['INTERNSHIP', 'GRADUATE_PROGRAM'],
       additionalContext: 'I want to become a Product Manager. I enjoy talking to users and leading teams, but I still need to get better with data.',
-      linkedinUrl: 'https://linkedin.com/in/raka-pratama-demo',
-      githubUrl: 'https://github.com/raka-pratama-demo',
+      linkedinUrl: 'https://linkedin.com/in/stanley-wijaya-demo',
+      githubUrl: 'https://github.com/stanley-wijaya-demo',
       cvText,
       cvParsedAt: daysAgo(150),
       extractionSource: 'HEURISTIC',

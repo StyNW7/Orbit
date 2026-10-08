@@ -1,4 +1,4 @@
-// Generates docs/demo/sample-cv-raka-pratama.pdf from docs/demo/sample-cv.txt
+// Generates docs/demo/sample-cv-stanley-wijaya.pdf from docs/demo/sample-cv.txt
 // with a tiny dependency-free PDF writer (text-based, so CV parsing works).
 //   node infra/scripts/make-sample-cv.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -70,5 +70,5 @@ objects.forEach((o, i) => {
 const xref = Buffer.byteLength(pdf);
 pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
 pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-writeFileSync(resolve(root, 'docs/demo/sample-cv-raka-pratama.pdf'), pdf, 'latin1');
-console.log('Wrote docs/demo/sample-cv-raka-pratama.pdf');
+writeFileSync(resolve(root, 'docs/demo/sample-cv-stanley-wijaya.pdf'), pdf, 'latin1');
+console.log('Wrote docs/demo/sample-cv-stanley-wijaya.pdf');

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/primitives';
 import { DEMO_CREDENTIALS, authMode, signIn, signUp } from '@/lib/auth';
 import { queryClient } from '@/hooks/queries';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
@@ -30,7 +31,8 @@ function AuthLayout({ title, subtitle, children }: { title: string; subtitle: st
           <p className="mt-3 text-sm text-white/60">Build Your Path. Become Career-Ready.</p>
         </div>
       </aside>
-      <main className="flex items-center justify-center px-4 py-10 sm:px-8">
+      <main className="relative flex items-center justify-center px-4 py-10 sm:px-8">
+        <ThemeToggle className="absolute right-4 top-4 sm:right-6 sm:top-6" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[400px]">
           <Link to="/" className="mb-10 inline-flex lg:hidden">
             <Logo />

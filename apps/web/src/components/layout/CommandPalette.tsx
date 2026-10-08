@@ -68,7 +68,7 @@ export function CommandPalette() {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/40 backdrop-blur-[2px]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/40 backdrop-blur-[2px] dark:bg-black/60" />
         <DialogPrimitive.Content className="fixed left-1/2 top-[12vh] z-50 w-[calc(100%-2rem)] max-w-[620px] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface shadow-pop focus:outline-none">
           <DialogPrimitive.Title className="sr-only">Search Orbit</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">Search pages, skills, opportunities, quests and people</DialogPrimitive.Description>

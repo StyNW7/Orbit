@@ -30,7 +30,7 @@ import { Tooltip } from '@/components/ui/overlays';
 import { EmptyState, ErrorState, LoadingState } from '@/components/common/states';
 import { useAddSkillToJourney, useNodeDetail, useRebuildUniverse, useUniverse } from '@/hooks/queries';
 import { usePageContext, useIsDark, useUiStore } from '@/stores/ui';
-import { NODE_STYLE } from '@/lib/icons';
+import { NODE_STYLE, nodeColor, onNodeColor } from '@/lib/icons';
 import { cn, relative } from '@/lib/utils';
 import { UniverseGraph, type UniverseGraphHandle } from './UniverseGraph';
 
@@ -82,7 +82,12 @@ export default function UniversePage() {
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q || !data) return [];
-    return data.nodes.filter((n) => n.label.toLowerCase().includes(q)).slice(0, 8);
+    // Exact, then prefix, then substring — so Enter opens "Product Analytics" before "Product Analytics Workshop".
+    const rank = (label: string) => (label === q ? 0 : label.startsWith(q) ? 1 : 2);
+    return data.nodes
+      .filter((n) => n.label.toLowerCase().includes(q))
+      .sort((a, b) => rank(a.label.toLowerCase()) - rank(b.label.toLowerCase()) || a.label.length - b.label.length)
+      .slice(0, 8);
   }, [query, data]);
 
   const select = (id: string | null) => {
@@ -140,7 +145,7 @@ export default function UniversePage() {
               {matches.map((n) => (
                 <li key={n.id}>
                   <button onMouseDown={(e) => e.preventDefault()} onClick={() => focusNode(n)} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-2">
-                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: NODE_STYLE[n.type].color }} />
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: nodeColor(n.type, dark) }} />
                     <span className="flex-1 truncate">{n.label}</span>
                     <span className="text-xs text-subtle-foreground">{NODE_TYPE_META[n.type].label}</span>
                   </button>
@@ -212,13 +217,18 @@ export default function UniversePage() {
           </Tooltip>
         </div>
 
-        {/* Legend */}
-        <div className="absolute right-4 top-4 hidden max-w-[220px] rounded-xl border border-border bg-surface/95 p-3 text-[11.5px] shadow-card backdrop-blur md:block">
+        {/* Legend — hidden while the details drawer occupies the right side */}
+        <div
+          className={cn(
+            'absolute right-4 top-4 hidden max-w-[220px] rounded-xl border border-border bg-surface/95 p-3 text-[11.5px] shadow-card backdrop-blur',
+            selectedId ? 'md:hidden' : 'md:block',
+          )}
+        >
           <p className="mb-2 font-semibold text-muted-foreground">Legend</p>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
             {(['USER', 'CAREER_ROLE', 'SKILL', 'GAP', 'GOAL', 'QUEST', 'EXPERIENCE', 'OPPORTUNITY', 'EVENT', 'COURSE', 'BOOK', 'ROLE_MODEL'] as const).map((t) => (
               <span key={t} className="flex items-center gap-1.5 truncate">
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: NODE_STYLE[t].color }} />
+                <span className="size-2.5 shrink-0 rounded-full" style={{ background: nodeColor(t, dark) }} />
                 {NODE_TYPE_META[t].label}
               </span>
             ))}
@@ -268,8 +278,9 @@ function NodeDetailBody({ detail, onFocus }: { detail: NodeDetail; onFocus: (n: 
   const navigate = useNavigate();
   const openAgent = useUiStore((s) => s.openAgent);
   const addSkill = useAddSkillToJourney();
-  const style = NODE_STYLE[node.type];
-  const Icon = style.icon;
+  const dark = useIsDark();
+  const color = nodeColor(node.type, dark);
+  const Icon = NODE_STYLE[node.type].icon;
   const grouped = useMemo(() => {
     const g = new Map<string, GraphNodeView[]>();
     for (const c of detail.connections) {
@@ -282,7 +293,7 @@ function NodeDetailBody({ detail, onFocus }: { detail: NodeDetail; onFocus: (n: 
   return (
     <div className="p-5">
       <div className="flex items-center gap-2">
-        <span className="flex size-8 items-center justify-center rounded-lg text-white" style={{ background: style.color }}>
+        <span className="flex size-8 items-center justify-center rounded-lg" style={{ background: color, color: onNodeColor(color) }}>
           <Icon className="size-4" />
         </span>
         <Badge tone={node.type === 'GAP' ? 'orange' : node.type === 'SKILL' ? 'green' : 'neutral'}>{NODE_TYPE_META[node.type].label}</Badge>
@@ -378,7 +389,7 @@ function NodeDetailBody({ detail, onFocus }: { detail: NodeDetail; onFocus: (n: 
                 <div className="flex flex-wrap gap-1.5">
                   {nodes.slice(0, 10).map((n) => (
                     <button key={n.id} onClick={() => onFocus(n)} className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[12px] hover:border-green">
-                      <span className="size-2 shrink-0 rounded-full" style={{ background: NODE_STYLE[n.type].color }} />
+                      <span className="size-2 shrink-0 rounded-full" style={{ background: nodeColor(n.type, dark) }} />
                       <span className="truncate">{n.label}</span>
                     </button>
                   ))}

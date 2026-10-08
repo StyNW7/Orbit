@@ -35,7 +35,7 @@ import { LangflowClient } from './langflow.client';
 import { PlannerEngine } from './planner.engine';
 import { TOOL_SPECS, ToolRegistryService } from './tool-registry.service';
 
-class PageContextDto {
+export class PageContextDto {
   @IsIn(['mission-control', 'universe', 'journey', 'discover', 'progress', 'profile', 'application', 'settings', 'other'])
   page!: 'mission-control' | 'universe' | 'journey' | 'discover' | 'progress' | 'profile' | 'application' | 'settings' | 'other';
 
@@ -44,13 +44,13 @@ class PageContextDto {
   @IsOptional() @IsString() @MaxLength(160) label?: string;
 }
 
-class ChatDto {
+export class ChatDto {
   @IsString() @MinLength(1) @MaxLength(2000) message!: string;
   @IsOptional() @IsUUID() conversationId?: string;
   @IsOptional() @ValidateNested() @Type(() => PageContextDto) pageContext?: PageContextDto;
 }
 
-class ToolCallDto {
+export class ToolCallDto {
   @IsString() @MinLength(8) session_id!: string;
   @IsOptional() @IsObject() args?: Record<string, unknown>;
 }

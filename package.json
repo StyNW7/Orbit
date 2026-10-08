@@ -26,6 +26,7 @@
     "infra:up:ai": "docker compose -f infra/docker-compose.yml up -d ollama langflow",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "infra:logs": "docker compose -f infra/docker-compose.yml logs -f",
+    "langflow:setup": "node infra/scripts/langflow-setup.mjs",
     "ollama:pull": "docker exec orbit-ollama ollama pull granite3.3:2b && docker exec orbit-ollama ollama pull nomic-embed-text"
   },
   "devDependencies": {

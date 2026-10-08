@@ -12,7 +12,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'demo/sample-cv-raka-pratama.pdf'],
+      includeAssets: ['favicon.svg', 'demo/sample-cv-stanley-wijaya.pdf'],
       manifest: {
         name: 'Orbit — Build Your Path. Become Career-Ready.',
         short_name: 'Orbit',

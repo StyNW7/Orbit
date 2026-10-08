@@ -34,12 +34,13 @@ import {
 import { LoadingState } from '@/components/common/states';
 import { AgentDrawer } from '@/components/agent/AgentDrawer';
 import { CommandPalette } from './CommandPalette';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { PRIMARY_NAV } from './nav';
 import { useMe, useMissionControl, useNotificationMutations, useNotifications } from '@/hooks/queries';
 import { useSessionStore } from '@/stores/session';
 import { useUiStore, type ThemePreference } from '@/stores/ui';
 import { signOut } from '@/lib/auth';
-import { cn, relative } from '@/lib/utils';
+import { centerOf, cn, relative } from '@/lib/utils';
 
 export function AppShell() {
   const location = useLocation();
@@ -57,7 +58,8 @@ export function AppShell() {
   }, [setCommandOpen]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    // Route changes jump to the top instantly; smooth scrolling is for in-page navigation.
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
   return (
@@ -122,11 +124,13 @@ function Sidebar() {
 
       {mission?.primaryGoal && (
         <div className="mx-3 mb-3 rounded-xl border border-border bg-surface-2/60 p-3.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Primary orbit</p>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <span className="truncate text-[14px] font-semibold">{mission.primaryGoal.role.title}</span>
-            {mission.readiness && <ReadinessPill score={mission.readiness.score} />}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Primary orbit</p>
+            {mission.readiness && <ReadinessPill score={mission.readiness.score} className="px-2 py-0.5 text-[11px]" />}
           </div>
+          <p className="mt-1.5 truncate text-[14px] font-semibold" title={mission.primaryGoal.role.title}>
+            {mission.primaryGoal.role.title}
+          </p>
           {level && (
             <div className="mt-3">
               <div className="mb-1 flex justify-between text-[11.5px] text-muted-foreground">
@@ -184,6 +188,7 @@ function Header() {
           </span>
         </button>
         <div className="ml-auto flex items-center gap-1.5">
+          <ThemeToggle />
           <NotificationsButton />
           <Button variant="gradient" size="md" onClick={() => openAgent()} className="hidden sm:inline-flex" aria-label="Ask Orbit">
             <Sparkles /> Ask Orbit
@@ -303,7 +308,7 @@ function UserMenu() {
                 role="radio"
                 aria-checked={theme === t.value}
                 aria-label={`${t.label} theme`}
-                onClick={() => setTheme(t.value)}
+                onClick={(e) => setTheme(t.value, centerOf(e.currentTarget))}
                 className={cn('flex h-8 flex-1 items-center justify-center rounded-lg transition', theme === t.value ? 'bg-surface-2 text-foreground' : 'text-muted-foreground hover:bg-surface-2')}
               >
                 <t.icon className="size-4" />

@@ -117,6 +117,7 @@
     border-color: var(--border);
   }
   html {
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -182,6 +183,12 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -263,6 +270,9 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+.dark .prose-orbit a {
+  color: var(--orbit-green);
+}
 
 /* React Flow theme alignment */
 .react-flow__attribution {
@@ -279,7 +289,17 @@
   fill: var(--foreground) !important;
 }
 
+/* Theme switch: a circular reveal (driven from stores/ui.ts) replaces the default crossfade */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {

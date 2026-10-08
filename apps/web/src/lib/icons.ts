@@ -53,3 +53,27 @@ export const NODE_STYLE: Record<NodeType, { color: string; icon: LucideIcon }> =
   MENTOR: { color: '#8B6FD6', icon: Users },
   ROLE_MODEL: { color: '#A48BE0', icon: Users },
 };
+
+/** Dark-canvas overrides: near-black and slate tones are lifted so every node stays visible. */
+const DARK_NODE_COLOR: Partial<Record<NodeType, string>> = {
+  CAREER_ROLE: '#E8EFEB',
+  GOAL: '#2FCB86',
+  EXPERIENCE: '#8FA79E',
+  PROJECT: '#7F9A90',
+  COMPETITION: '#A3BBB1',
+  CERTIFICATION: '#B4C7BF',
+  COURSE: '#5B9BD5',
+  BOOK: '#7AAAE0',
+  PAPER: '#9BBEE6',
+};
+
+export function nodeColor(type: NodeType, dark: boolean): string {
+  return (dark && DARK_NODE_COLOR[type]) || NODE_STYLE[type].color;
+}
+
+/** Readable foreground (icon/text) for a solid node-colour chip. */
+export function onNodeColor(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return 0.299 * r + 0.587 * g + 0.114 * b > 170 ? '#101714' : '#FFFFFF';
+}

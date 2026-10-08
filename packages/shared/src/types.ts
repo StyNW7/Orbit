@@ -839,7 +839,15 @@ export interface AgentConversationView {
 
 export interface AgentStatus {
   activeEngine: AgentEngine;
-  langflow: { configured: boolean; reachable: boolean; flowId: string | null };
+  langflow: {
+    configured: boolean;
+    reachable: boolean;
+    flowId: string | null;
+    /** model provider the flow runs on */
+    modelProvider: string;
+    /** why Orbit is not routing chats through Langflow right now (null when it is) */
+    skippedReason: string | null;
+  };
   ai: {
     provider: string;
     model: string;

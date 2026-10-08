@@ -328,7 +328,7 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
   return (
     <Card id={`item-${paper.id}`} className={cn('p-5', highlight && 'border-green shadow-[0_0_0_4px_var(--ring)]')}>
       <div className="flex items-start gap-3.5">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-[#3E7CB1]">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-[#3E7CB1] dark:text-[#7AAAE0]">
           <FileText className="size-5" />
         </span>
         <div className="min-w-0 flex-1">

@@ -45,7 +45,9 @@ async function request<T>(method: string, path: string, body?: Body, signal?: Ab
     payload = null;
   }
 
-  if (res.status === 401 && token) {
+  // Only a 401 for the *current* session means it expired; a late response from a previous
+  // session (e.g. right after switching accounts) must not sign the new one out.
+  if (res.status === 401 && token && token === (await getAccessToken())) {
     handleUnauthorized();
   }
   if (!res.ok || !payload || payload.success === false) {

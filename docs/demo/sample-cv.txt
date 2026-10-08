@@ -1,6 +1,6 @@
-RAKA PRATAMA
+STANLEY WIJAYA
 Computer Science Student | Aspiring Product Manager
-Jakarta, Indonesia | raka.pratama.demo@example.com | linkedin.com/in/raka-pratama-demo | github.com/raka-pratama-demo
+Jakarta, Indonesia | stanley.wijaya.demo@example.com | linkedin.com/in/stanley-wijaya-demo | github.com/stanley-wijaya-demo
 
 SUMMARY
 Computer Science student who enjoys turning messy problems into products people use. Led a 12-person technology division, shipped a campus event app used by 1,200 students, and reached the finals of a national hackathon. Looking for a Product Management internship.

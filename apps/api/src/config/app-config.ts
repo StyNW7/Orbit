@@ -29,6 +29,9 @@ const EnvSchema = z.object({
   LANGFLOW_FLOW_ID: optionalString,
   LANGFLOW_API_KEY: optionalString,
   LANGFLOW_TIMEOUT_MS: z.coerce.number().default(90000),
+  // Which model the Langflow flow runs on (written by `pnpm langflow:setup -- --write-env`).
+  // When it is the same local Ollama model and that model is too slow, Orbit skips Langflow.
+  LANGFLOW_MODEL_PROVIDER: z.enum(['ollama', 'groq', 'watsonx']).default('ollama'),
   ORBIT_TOOL_API_KEY: z.string().default('change-me-orbit-tool-key'),
 
   AI_PROVIDER: z.enum(['ollama', 'groq', 'watsonx', 'none']).default('ollama'),

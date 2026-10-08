@@ -125,7 +125,7 @@ export function AgentDrawer() {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/25 sm:bg-[#101714]/15" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/25 sm:bg-[#101714]/15 dark:bg-black/50 sm:dark:bg-black/40" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col border-l border-border bg-background shadow-pop focus:outline-none sm:max-w-[480px]"

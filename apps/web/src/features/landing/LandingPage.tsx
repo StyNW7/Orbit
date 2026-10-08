@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
@@ -34,6 +34,7 @@ import { Badge, Progress } from '@/components/ui/primitives';
 import { useSessionStore } from '@/stores/session';
 import { cn } from '@/lib/utils';
 import { OrbitSystem } from './OrbitSystem';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 function Reveal({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
   return (
@@ -53,31 +54,87 @@ function SectionHead({ eyebrow, title, description, center = true }: { eyebrow: 
   );
 }
 
+const LANDING_SECTIONS = [
+  { id: 'how', label: 'How it works' },
+  { id: 'universe', label: 'Career Universe' },
+  { id: 'capabilities', label: 'Capabilities' },
+  { id: 'agent', label: 'Orbit Agent' },
+] as const;
+
+/** Header state: whether the page has scrolled, and which section is under the nav (scroll-spy). */
+function useLandingScroll() {
+  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) setActive(entry.target.id);
+      },
+      // A thin band just below the sticky header decides which section is "current".
+      { rootMargin: '-72px 0px -70% 0px' },
+    );
+    const sections = LANDING_SECTIONS.map((s) => document.getElementById(s.id)).filter((el): el is HTMLElement => Boolean(el));
+    sections.forEach((el) => observer.observe(el));
+    const clearAtTop = () => window.scrollY < (sections[0]?.offsetTop ?? 0) - 120 && setActive(null);
+    window.addEventListener('scroll', clearAtTop, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', clearAtTop);
+      observer.disconnect();
+    };
+  }, []);
+  return { scrolled, active };
+}
+
 export default function LandingPage() {
   const authed = Boolean(useSessionStore((s) => s.token));
+  const { scrolled, active } = useLandingScroll();
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-transparent bg-background/80 backdrop-blur-md">
+    // overflow-x-clip (not hidden) keeps the page from becoming its own scroll container, so the sticky nav works.
+    <div className="min-h-dvh overflow-x-clip bg-background">
+      {/* Nav — sticky; gains a border and shadow once the page scrolls */}
+      <header
+        className={cn(
+          'sticky top-0 z-40 border-b backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300',
+          scrolled ? 'border-border bg-background/85 shadow-[0_8px_24px_-18px_rgba(16,23,20,0.35)]' : 'border-transparent bg-background/60',
+        )}
+      >
         <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-4 sm:px-6">
-          <Link to="/" aria-label="Orbit home">
+          <Link
+            to="/"
+            aria-label="Orbit home"
+            onClick={(e) => {
+              // Already on the landing page: glide back to the top instead of re-navigating.
+              e.preventDefault();
+              window.scrollTo({ top: 0 });
+              history.replaceState(null, '', '/');
+            }}
+          >
             <Logo />
           </Link>
-          <nav className="hidden items-center gap-6 text-[14px] font-medium text-muted-foreground md:flex" aria-label="Landing">
-            <a href="#how" className="hover:text-foreground">
-              How it works
-            </a>
-            <a href="#capabilities" className="hover:text-foreground">
-              Capabilities
-            </a>
-            <a href="#universe" className="hover:text-foreground">
-              Career Universe
-            </a>
-            <a href="#agent" className="hover:text-foreground">
-              Orbit Agent
-            </a>
+          <nav className="hidden items-center gap-1 text-[14px] font-medium md:flex" aria-label="Landing">
+            {LANDING_SECTIONS.map((section) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                aria-current={active === section.id ? 'location' : undefined}
+                className={cn(
+                  'relative rounded-lg px-3 py-1.5 transition-colors',
+                  active === section.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {section.label}
+                {active === section.id && (
+                  <motion.span layoutId="landing-nav-active" className="absolute inset-x-3 -bottom-[13px] h-[2px] rounded-full bg-green" transition={{ duration: 0.25 }} />
+                )}
+              </a>
+            ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             {authed ? (
               <Button asChild>
                 <Link to="/app">
@@ -191,7 +248,7 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="scroll-mt-16 py-20 sm:py-28">
+      <section id="how" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow="How Orbit works" title="One loop that keeps adapting to you" description="Every action feeds back into your long-term career memory, so recommendations get sharper as you grow." />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -221,7 +278,7 @@ export default function LandingPage() {
       </section>
 
       {/* Universe preview */}
-      <section id="universe" className="scroll-mt-16 bg-[#0d1512] py-20 text-white sm:py-28">
+      <section id="universe" className="scroll-mt-20 bg-[#0d1512] py-20 text-white sm:py-28">
         <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
           <Reveal>
             <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-[#5fe0a0]">Career Universe</p>
@@ -247,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* Capabilities */}
-      <section id="capabilities" className="scroll-mt-16 py-20 sm:py-28">
+      <section id="capabilities" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow="Five core capabilities" title="Everything supports one question" description="How career-ready are you — and what should you do next?" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -347,7 +404,7 @@ export default function LandingPage() {
       </section>
 
       {/* Agent + progress */}
-      <section id="agent" className="scroll-mt-16 py-20 sm:py-28">
+      <section id="agent" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow="Orbit Career Agent" title="Not a chatbot. A career agent." description="Orbit uses your profile, journey, gaps, applications and deadlines — then proposes actions you confirm with one click." />
           <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">

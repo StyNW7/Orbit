@@ -68,7 +68,7 @@ export default function DiscoverPage() {
       />
       <Highlights />
       <Tabs value={tab} onValueChange={setTab} className="mb-5 mt-7">
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+        <TabsList className="no-scrollbar w-full justify-start overflow-x-auto overflow-y-hidden sm:w-auto">
           {TABS.map((t) => (
             <TabsTrigger key={t.id} value={t.id}>
               <t.icon /> {t.label}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -39,6 +39,7 @@ import { signOut } from '@/lib/auth';
 import { errorMessage } from '@/lib/api';
 import { useSessionStore } from '@/stores/session';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 const STEPS = ['Direction', 'CV', 'Interests', 'Preferences', 'Context', 'Analyze'] as const;
 
@@ -54,6 +55,9 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const user = useSessionStore((s) => s.user);
   const [step, setStep] = useState(0);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
   const [role, setRole] = useState<string | null>(null);
   const [aspiration, setAspiration] = useState('');
   const [cv, setCv] = useState<CvUploadResult | null>(null);
@@ -98,9 +102,12 @@ export default function OnboardingPage() {
       <div className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(ellipse_at_top,rgba(10,180,106,0.10),transparent_60%)]" aria-hidden />
       <header className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
         <Logo />
-        <Button variant="ghost" size="sm" onClick={() => void signOut().then(() => navigate('/'))}>
-          <LogOut /> Sign out
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Button variant="ghost" size="sm" onClick={() => void signOut().then(() => navigate('/'))}>
+            <LogOut /> Sign out
+          </Button>
+        </div>
       </header>
       <main className="relative mx-auto max-w-3xl px-4 pb-16 sm:px-6">
         {!result && (
@@ -279,11 +286,11 @@ function CvStep({ cv, setCv, cvText, setCvText }: { cv: CvUploadResult | null; s
     [upload, setCv],
   );
 
-  const useSample = async () => {
+  const loadSampleCv = async () => {
     setLoadingSample(true);
     try {
-      const blob = await fetch('/demo/sample-cv-raka-pratama.pdf').then((r) => r.blob());
-      handle(new File([blob], 'sample-cv-raka-pratama.pdf', { type: 'application/pdf' }));
+      const blob = await fetch('/demo/sample-cv-stanley-wijaya.pdf').then((r) => r.blob());
+      handle(new File([blob], 'sample-cv-stanley-wijaya.pdf', { type: 'application/pdf' }));
     } finally {
       setLoadingSample(false);
     }
@@ -338,7 +345,7 @@ function CvStep({ cv, setCv, cvText, setCvText }: { cv: CvUploadResult | null; s
               <Button onClick={() => inputRef.current?.click()} loading={upload.isPending}>
                 Choose PDF
               </Button>
-              <Button variant="secondary" onClick={() => void useSample()} loading={loadingSample} disabled={upload.isPending}>
+              <Button variant="secondary" onClick={() => void loadSampleCv()} loading={loadingSample} disabled={upload.isPending}>
                 Use sample CV
               </Button>
             </div>

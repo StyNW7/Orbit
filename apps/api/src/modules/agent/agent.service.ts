@@ -52,9 +52,17 @@ export class AgentService {
   async status(): Promise<AgentStatus> {
     const [langflowReachable, aiReachable] = await Promise.all([this.langflow.isReachable(true), this.ai.isAvailable(true)]);
     const interactive = aiReachable && this.modelIsInteractive();
+    const skippedReason = this.langflowSkipReason();
+    const langflowActive = langflowReachable && !skippedReason;
     return {
-      activeEngine: langflowReachable ? 'langflow' : interactive ? 'direct' : 'planner',
-      langflow: { configured: this.langflow.configured, reachable: langflowReachable, flowId: this.langflow.flowId },
+      activeEngine: langflowActive ? 'langflow' : interactive ? 'direct' : 'planner',
+      langflow: {
+        configured: this.langflow.configured,
+        reachable: langflowReachable,
+        flowId: this.langflow.flowId,
+        modelProvider: this.config.env.LANGFLOW_MODEL_PROVIDER,
+        skippedReason: langflowReachable ? skippedReason : null,
+      },
       ai: { provider: this.ai.provider.name, model: this.ai.provider.model, reachable: aiReachable, throughput: this.ai.throughput, interactive },
       embeddings: { provider: this.embeddings.provider, model: this.embeddings.modelTag },
     };
@@ -76,7 +84,7 @@ export class AgentService {
     let notice: string | null = null;
     let result: EngineResult | null = null;
 
-    if (this.langflow.configured && (await this.langflow.isReachable())) {
+    if (this.langflow.configured && !this.langflowSkipReason() && (await this.langflow.isReachable())) {
       try {
         result = await this.runLangflow(userId, conversation.id, input.message, context, turnStart);
         engine = 'langflow';
@@ -130,6 +138,17 @@ export class AgentService {
         createdAt: message.createdAt.toISOString(),
       },
     };
+  }
+
+  /**
+   * Langflow is skipped (instead of making the user wait for a timeout) when the flow runs on the
+   * same local Ollama model Orbit has measured as too slow for live answers on this machine.
+   */
+  private langflowSkipReason(): string | null {
+    if (this.config.env.LANGFLOW_MODEL_PROVIDER !== 'ollama' || this.ai.provider.name !== 'ollama') return null;
+    if (this.ai.throughput === null) return 'Measuring the local model’s speed before routing chats through Langflow.';
+    if (this.modelIsInteractive()) return null;
+    return 'The flow uses the local Ollama model, which is too slow on this machine. Point it at Groq or watsonx (pnpm langflow:setup).';
   }
 
   /** Can the configured model answer within AGENT_TIMEOUT_MS on this hardware? */

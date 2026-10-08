@@ -49,8 +49,6 @@ const DEFAULT_CHECKLIST = [
   'Practise interview questions in Orbit',
 ];
 
-const ADVANCED: ApplicationStatus[] = ['APPLIED', 'ASSESSMENT', 'INTERVIEW', 'OFFER'];
-
 type AppWithOpp = Application & { opportunity: Opportunity; _count?: { interviews: number } };
 
 function checklist(raw: unknown): PrepChecklistItem[] {

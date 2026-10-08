@@ -57,7 +57,11 @@ services:
       LANGFLOW_AUTO_LOGIN: "true"
       LANGFLOW_SKIP_AUTH_AUTO_LOGIN: "true"
       LANGFLOW_CONFIG_DIR: /app/langflow
+      # Keep the flow database inside the orbit-langflow volume so flows survive container re-creation.
+      LANGFLOW_SAVE_DB_IN_CONFIG_DIR: "true"
       LANGFLOW_COMPONENTS_PATH: /app/orbit-components
+      # Langflow blocks private hosts by default (SSRF protection); allow the compose services it must reach.
+      LANGFLOW_SSRF_ALLOWED_HOSTS: ollama,host.docker.internal
       # Orbit tool components call back into the NestJS API running on the host.
       ORBIT_API_URL: ${ORBIT_API_URL_FOR_LANGFLOW:-http://host.docker.internal:4000/api}
       ORBIT_TOOL_API_KEY: ${ORBIT_TOOL_API_KEY:-change-me-orbit-tool-key}

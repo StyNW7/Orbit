@@ -9,7 +9,7 @@ import { useAgentStatus, useMe } from '@/hooks/queries';
 import { useUiStore, type ThemePreference } from '@/stores/ui';
 import { authMode, signOut } from '@/lib/auth';
 import { api } from '@/lib/api';
-import { cn, relative } from '@/lib/utils';
+import { centerOf, cn, relative } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { data: me } = useMe();
@@ -61,7 +61,7 @@ export default function SettingsPage() {
                 key={t.value}
                 role="radio"
                 aria-checked={theme === t.value}
-                onClick={() => setTheme(t.value)}
+                onClick={(e) => setTheme(t.value, centerOf(e.currentTarget))}
                 className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-[13px] font-medium transition', theme === t.value ? 'border-green bg-muted-green text-green-strong dark:text-green' : 'border-border hover:border-border-strong')}
               >
                 <t.icon className="size-5" /> {t.label}
@@ -100,9 +100,22 @@ export default function SettingsPage() {
               <StatusTile
                 icon={Workflow}
                 title="Langflow"
-                value={status.langflow.configured ? (status.langflow.reachable ? 'Connected' : 'Unreachable') : 'Not configured'}
-                ok={status.langflow.reachable}
-                detail={status.langflow.flowId ? `Flow ${status.langflow.flowId.slice(0, 8)}…` : 'Set LANGFLOW_FLOW_ID to route the agent through Langflow'}
+                value={
+                  !status.langflow.configured
+                    ? 'Not configured'
+                    : !status.langflow.reachable
+                      ? 'Unreachable'
+                      : status.langflow.skippedReason
+                        ? 'Standing by'
+                        : 'Connected'
+                }
+                ok={status.langflow.reachable && !status.langflow.skippedReason}
+                detail={
+                  status.langflow.skippedReason ??
+                  (status.langflow.flowId
+                    ? `Flow ${status.langflow.flowId.slice(0, 8)}… · model: ${status.langflow.modelProvider}`
+                    : 'Run pnpm langflow:setup to route the agent through Langflow')
+                }
               />
               <StatusTile
                 icon={Cpu}
