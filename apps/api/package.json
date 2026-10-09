@@ -5,7 +5,7 @@
   "description": "Orbit API â€” NestJS + Prisma + PostgreSQL (Supabase) + Langflow gateway",
   "scripts": {
     "dev": "nest start --watch",
-    "build": "nest build",
+    "build": "pnpm --filter @orbit/shared build && prisma generate && nest build",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\"",

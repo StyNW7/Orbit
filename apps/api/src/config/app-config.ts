@@ -14,7 +14,8 @@ const optionalString = z
 
 const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
-  API_PORT: z.coerce.number().default(4000),
+  // Hosting platforms (Render, Railway, Fly, Vercel dev) inject PORT; API_PORT wins when both are set.
+  API_PORT: z.preprocess((v) => v || process.env.PORT || undefined, z.coerce.number().default(4000)),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
@@ -74,9 +75,25 @@ export class AppConfig {
       throw new Error(`Invalid environment configuration: ${issues}`);
     }
     this.env = parsed.data;
-    if (this.isProduction && this.env.APP_JWT_SECRET.startsWith('change-me') && !this.supabaseEnabled) {
-      this.logger.warn('APP_JWT_SECRET is using the default value. Set a strong secret before deploying.');
+    if (this.isProduction && !this.supabaseEnabled && this.env.APP_JWT_SECRET.startsWith('change-me')) {
+      // The default secret is public (it ships in .env.example), so anyone could forge a session.
+      throw new Error('Invalid environment configuration: APP_JWT_SECRET must be set to a strong secret in production (or configure SUPABASE_URL).');
     }
+    if (this.isProduction && !this.toolKeyConfigured) {
+      this.logger.warn('ORBIT_TOOL_API_KEY is not set — Langflow tool endpoints are disabled until it is.');
+    }
+  }
+
+  /** Allowed browser origins (comma separated FRONTEND_URL, trailing slashes ignored). */
+  get corsOrigins(): string[] {
+    return this.env.FRONTEND_URL.split(',')
+      .map((o) => o.trim().replace(/\/+$/, ''))
+      .filter(Boolean);
+  }
+
+  /** The default tool key is public, so production only accepts an explicitly configured one. */
+  get toolKeyConfigured(): boolean {
+    return !(this.isProduction && this.env.ORBIT_TOOL_API_KEY.startsWith('change-me'));
   }
 
   get isProduction() {

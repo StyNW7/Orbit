@@ -61,6 +61,9 @@ export class ToolKeyGuard implements CanActivate {
   constructor(private readonly config: AppConfig) {}
 
   canActivate(context: ExecutionContext): boolean {
+    if (!this.config.toolKeyConfigured) {
+      throw new AppError('INVALID_TOOL_KEY', 'Tool access is not configured.', HttpStatus.UNAUTHORIZED);
+    }
     const req = context.switchToHttp().getRequest<Request>();
     const provided = Buffer.from(String(req.headers['x-orbit-tool-key'] ?? ''));
     const expected = Buffer.from(this.config.env.ORBIT_TOOL_API_KEY);

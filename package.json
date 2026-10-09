@@ -11,7 +11,7 @@
     "dev": "pnpm --filter @orbit/shared build && concurrently -n shared,api,web -c gray,green,yellow \"pnpm --filter @orbit/shared dev\" \"pnpm --filter @orbit/api dev\" \"pnpm --filter @orbit/web dev\"",
     "dev:api": "pnpm --filter @orbit/api dev",
     "dev:web": "pnpm --filter @orbit/web dev",
-    "build": "pnpm --filter @orbit/shared build && pnpm --filter @orbit/api build && pnpm --filter @orbit/web build",
+    "build": "pnpm --filter @orbit/api build && pnpm --filter @orbit/web build",
     "start": "pnpm --filter @orbit/api start",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --filter @orbit/shared build && pnpm -r typecheck",
