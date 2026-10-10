@@ -28,6 +28,7 @@ import {
   parseDate,
   type ExtractedProfile,
 } from './cv-extraction';
+import { L } from '../../common/i18n/locale';
 
 export interface AnalyzeInput {
   targetRoleSlug: string;
@@ -89,8 +90,8 @@ export class ProfilesService {
     // 1. Reading
     steps.push(
       cvText
-        ? { id: 'extract', label: 'Reading your experience', status: 'done', detail: `Read ${cvText.length.toLocaleString()} characters from your CV.` }
-        : { id: 'extract', label: 'Reading your experience', status: 'skipped', detail: 'No CV provided — using your answers only.' },
+        ? { id: 'extract', label: L('Reading your experience', 'Membaca pengalamanmu'), status: 'done', detail: L(`Read ${cvText.length.toLocaleString()} characters from your CV.`, `Membaca ${cvText.length.toLocaleString('id-ID')} karakter dari CV-mu.`) }
+        : { id: 'extract', label: L('Reading your experience', 'Membaca pengalamanmu'), status: 'skipped', detail: L('No CV provided — using your answers only.', 'Tidak ada CV — hanya memakai jawabanmu.') },
     );
 
     // 2. Structuring (AI with validation, heuristic fallback)
@@ -116,19 +117,27 @@ export class ProfilesService {
       }
       steps.push({
         id: 'structure',
-        label: 'Mapping your strengths',
+        label: L('Mapping your strengths', 'Memetakan kekuatanmu'),
         status: 'done',
-        detail: `${source === 'AI' ? 'AI extraction' : 'Structured parsing'} found ${extracted.experiences.length} experiences, ${extracted.education.length} education entries and ${extracted.achievements.length} achievements.`,
+        detail: L(
+          `${source === 'AI' ? 'AI extraction' : 'Structured parsing'} found ${extracted.experiences.length} experiences, ${extracted.education.length} education entries and ${extracted.achievements.length} achievements.`,
+          `${source === 'AI' ? 'Ekstraksi AI' : 'Parsing terstruktur'} menemukan ${extracted.experiences.length} pengalaman, ${extracted.education.length} riwayat pendidikan, dan ${extracted.achievements.length} pencapaian.`,
+        ),
       });
     } else {
-      steps.push({ id: 'structure', label: 'Mapping your strengths', status: 'skipped', detail: 'Add a CV later to map experiences automatically.' });
+      steps.push({ id: 'structure', label: L('Mapping your strengths', 'Memetakan kekuatanmu'), status: 'skipped', detail: L('Add a CV later to map experiences automatically.', 'Tambahkan CV nanti untuk memetakan pengalaman secara otomatis.') });
     }
 
     // 3. Skills
     const contextText = `${cvText}\n${input.additionalContext ?? ''}`;
     const skillLevels = contextText.trim() ? estimateSkillLevels(extracted, contextText) : [];
     await this.persistExtraction(userId, extracted, skillLevels);
-    steps.push({ id: 'skills', label: 'Identifying career gaps', status: 'done', detail: `Mapped ${skillLevels.length} skills against ${role.title} requirements.` });
+    steps.push({
+      id: 'skills',
+      label: L('Identifying career gaps', 'Mengidentifikasi gap karier'),
+      status: 'done',
+      detail: L(`Mapped ${skillLevels.length} skills against ${role.title} requirements.`, `Memetakan ${skillLevels.length} skill terhadap kebutuhan ${role.title}.`),
+    });
 
     // 4. Profile, preferences and goal
     await this.prisma.careerProfile.upsert({
@@ -180,8 +189,13 @@ export class ProfilesService {
 
     // 5. Readiness + Universe
     const readiness = await this.sync.afterChange(userId, 'profile_analyzed', { recommendations: true });
-    steps.push({ id: 'readiness', label: 'Calculating career readiness', status: readiness ? 'done' : 'failed', detail: readiness ? `${role.title} readiness: ${Math.round(readiness.score)}%.` : 'Readiness could not be calculated.' });
-    steps.push({ id: 'graph', label: 'Building your Orbit', status: 'done', detail: 'Your Career Universe is ready.' });
+    steps.push({
+      id: 'readiness',
+      label: L('Calculating career readiness', 'Menghitung kesiapan karier'),
+      status: readiness ? 'done' : 'failed',
+      detail: readiness ? L(`${role.title} readiness: ${Math.round(readiness.score)}%.`, `Kesiapan ${role.title}: ${Math.round(readiness.score)}%.`) : L('Readiness could not be calculated.', 'Kesiapan tidak dapat dihitung.'),
+    });
+    steps.push({ id: 'graph', label: L('Building your Orbit', 'Membangun Orbit-mu'), status: 'done', detail: L('Your Career Universe is ready.', 'Career Universe-mu sudah siap.') });
 
     return { steps, extractionSource: source, intelligence: await this.intelligence(userId) };
   }

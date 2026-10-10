@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { format } from 'date-fns';
 import { Area, AreaChart, CartesianGrid, PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   Award,
@@ -22,13 +21,15 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { APPLICATION_STATUS_LABELS, READINESS_CATEGORY_LABELS, type ProgressSummary, type ReadinessCategory } from '@orbit/shared';
+import type { ProgressSummary } from '@orbit/shared';
 import { AnimatedNumber } from '@/components/brand/brand';
 import { Badge, Card, CardEyebrow, Progress } from '@/components/ui/primitives';
 import { CardSkeleton, ErrorState, PageHeader, ScoreBar, StatTile } from '@/components/common/states';
 import { useProgress } from '@/hooks/queries';
 import { useIsDark, usePageContext } from '@/stores/ui';
-import { round1 } from '@/lib/utils';
+import { formatDate, round1 } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 const TIMELINE_ICON: Record<string, LucideIcon> = {
   PROFILE_ANALYZED: Sparkles,
@@ -63,6 +64,8 @@ export default function ProgressPage() {
 
 function ProgressBody({ data }: { data: ProgressSummary }) {
   const dark = useIsDark();
+  const { t, tn, locale } = useT();
+  const labels = useLabels();
   const first = data.history[0]?.score;
   const current = data.readiness?.score ?? 0;
   const growth = first !== undefined ? round1(current - first) : null;
@@ -71,32 +74,33 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
     if (data.readiness && (!points.length || points[points.length - 1].score !== data.readiness.score)) points.push({ date: data.readiness.computedAt, score: data.readiness.score });
     return points;
   }, [data]);
-  const radar = data.readiness?.breakdown.map((b) => ({ category: READINESS_CATEGORY_LABELS[b.category as ReadinessCategory].replace(' Readiness', '').replace(' Match', ''), score: b.score })) ?? [];
+  const radar = data.readiness?.breakdown.map((b) => ({ category: labels.readinessShort(b.category), score: b.score })) ?? [];
   const grid = dark ? '#25322c' : '#e3e9e6';
   const axis = dark ? '#75837c' : '#8b9791';
 
   const grouped = useMemo(() => {
     const m = new Map<string, ProgressSummary['timeline']>();
-    for (const t of data.timeline) {
-      const key = format(new Date(t.date), 'MMMM yyyy');
-      m.set(key, [...(m.get(key) ?? []), t]);
+    for (const item of data.timeline) {
+      const key = formatDate(item.date, 'MMMM yyyy');
+      m.set(key, [...(m.get(key) ?? []), item]);
     }
     return [...m.entries()];
-  }, [data.timeline]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.timeline, locale]);
 
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Progress"
-        title="How far you’ve come"
-        description={data.readiness ? `${data.readiness.roleTitle} readiness, measured by Orbit’s deterministic engine and explained by the agent.` : undefined}
+        eyebrow={t('progress.eyebrow')}
+        title={t('progress.title')}
+        description={data.readiness ? t('progress.desc', { role: data.readiness.roleTitle }) : undefined}
       />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <CardEyebrow>Career readiness history</CardEyebrow>
+              <CardEyebrow>{t('progress.history')}</CardEyebrow>
               <p className="mt-1 font-display text-[34px] font-bold leading-none">
                 <AnimatedNumber value={current} decimals={1} />
                 <span className="text-[18px] text-muted-foreground">%</span>
@@ -104,7 +108,7 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
             </div>
             {growth !== null && growth > 0 && (
               <Badge tone="green" className="text-[12.5px]">
-                +{growth} points since you started
+                {t('progress.growth', { points: growth })}
               </Badge>
             )}
           </div>
@@ -123,24 +127,24 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke={grid} vertical={false} />
-                  <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'd MMM')} stroke={axis} fontSize={11.5} tickLine={false} axisLine={false} minTickGap={24} />
+                  <XAxis dataKey="date" tickFormatter={(d) => formatDate(d, 'd MMM')} stroke={axis} fontSize={11.5} tickLine={false} axisLine={false} minTickGap={24} />
                   <YAxis domain={[(min: number) => Math.max(0, Math.floor(min / 10) * 10 - 10), 100]} stroke={axis} fontSize={11.5} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12.5 }}
-                    labelFormatter={(d) => format(new Date(d as string), 'd MMMM yyyy')}
-                    formatter={(v: number) => [`${round1(v)}%`, 'Readiness']}
+                    labelFormatter={(d) => formatDate(d as string, 'd MMMM yyyy')}
+                    formatter={(v: number) => [`${round1(v)}%`, t('progress.readiness')]}
                   />
                   <Area type="monotone" dataKey="score" stroke="url(#readinessStroke)" strokeWidth={3} fill="url(#readinessFill)" dot={{ r: 3, fill: '#0AB46A', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Your readiness history will grow as you make progress.</div>
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t('progress.historyEmpty')}</div>
             )}
           </div>
         </Card>
 
         <Card className="p-6">
-          <CardEyebrow>Readiness by category</CardEyebrow>
+          <CardEyebrow>{t('progress.byCategory')}</CardEyebrow>
           <div className="h-[230px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radar} outerRadius="72%">
@@ -152,49 +156,49 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
           </div>
           <div className="space-y-2.5">
             {data.readiness?.breakdown.map((b) => (
-              <ScoreBar key={b.category} label={`${b.label} · ${Math.round(b.weight * 100)}%`} value={b.score} tone={b.score < 55 ? 'orange' : 'green'} />
+              <ScoreBar key={b.category} label={`${labels.readiness(b.category)} · ${Math.round(b.weight * 100)}%`} value={b.score} tone={b.score < 55 ? 'orange' : 'green'} />
             ))}
           </div>
         </Card>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatTile icon={Zap} label="Skills acquired" value={data.stats.skillsAcquired} />
-        <StatTile icon={BriefcaseBusiness} label="Experiences" value={data.stats.experiences} tone="neutral" />
-        <StatTile icon={Trophy} label="Quests completed" value={data.stats.questsCompleted} />
-        <StatTile icon={Rocket} label="Applications" value={data.stats.applications} tone="orange" />
-        <StatTile icon={MessagesSquare} label="Interviews" value={data.stats.interviews} tone="orange" />
-        <StatTile icon={Award} label="Offers" value={data.stats.offers} />
+        <StatTile icon={Zap} label={t('progress.stat.skills')} value={data.stats.skillsAcquired} />
+        <StatTile icon={BriefcaseBusiness} label={t('progress.stat.experiences')} value={data.stats.experiences} tone="neutral" />
+        <StatTile icon={Trophy} label={t('progress.stat.quests')} value={data.stats.questsCompleted} />
+        <StatTile icon={Rocket} label={t('progress.stat.applications')} value={data.stats.applications} tone="orange" />
+        <StatTile icon={MessagesSquare} label={t('progress.stat.interviews')} value={data.stats.interviews} tone="orange" />
+        <StatTile icon={Award} label={t('progress.stat.offers')} value={data.stats.offers} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="p-6">
-          <CardEyebrow>Orbit level</CardEyebrow>
+          <CardEyebrow>{t('progress.level')}</CardEyebrow>
           <div className="mt-3 flex items-center gap-4">
             <div className="orbit-gradient flex size-16 items-center justify-center rounded-2xl font-display text-[24px] font-bold text-white">{data.level.level}</div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold tabular">{data.level.xp} Career XP</p>
-              <p className="text-[12.5px] text-muted-foreground">{data.level.nextLevelXp - data.level.xp} XP to level {data.level.level + 1}</p>
-              <Progress value={data.level.progress} tone="gradient" className="mt-2" label="Level progress" />
+              <p className="font-semibold tabular">{t('progress.careerXp', { xp: data.level.xp })}</p>
+              <p className="text-[12.5px] text-muted-foreground">{t('progress.toNext', { xp: data.level.nextLevelXp - data.level.xp, level: data.level.level + 1 })}</p>
+              <Progress value={data.level.progress} tone="gradient" className="mt-2" label={t('progress.levelProgress')} />
             </div>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-surface-2 p-3">
               <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                <Flame className="size-3.5 text-orange" /> Current streak
+                <Flame className="size-3.5 text-orange" /> {t('progress.currentStreak')}
               </p>
-              <p className="mt-1 font-display text-[20px] font-bold">{data.streak.current} days</p>
+              <p className="mt-1 font-display text-[20px] font-bold">{tn('date.days', data.streak.current)}</p>
             </div>
             <div className="rounded-xl bg-surface-2 p-3">
               <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                <Medal className="size-3.5 text-green" /> Longest streak
+                <Medal className="size-3.5 text-green" /> {t('progress.longestStreak')}
               </p>
-              <p className="mt-1 font-display text-[20px] font-bold">{data.streak.longest} days</p>
+              <p className="mt-1 font-display text-[20px] font-bold">{tn('date.days', data.streak.longest)}</p>
             </div>
           </div>
           {data.milestones.length > 0 && (
             <div className="mt-5 space-y-3">
-              <p className="text-[13px] font-semibold">Milestones</p>
+              <p className="text-[13px] font-semibold">{t('progress.milestones')}</p>
               {data.milestones.map((m) => (
                 <div key={m.id}>
                   <div className="mb-1 flex justify-between text-[12.5px]">
@@ -209,14 +213,14 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
         </Card>
 
         <Card className="p-6">
-          <CardEyebrow>Application funnel</CardEyebrow>
+          <CardEyebrow>{t('progress.funnel')}</CardEyebrow>
           <div className="mt-4 space-y-2.5">
             {data.applicationFunnel.map((f, i) => {
               const max = Math.max(1, data.applicationFunnel[0]?.count ?? 1);
               return (
                 <div key={f.status}>
                   <div className="mb-1 flex justify-between text-[12.5px]">
-                    <span>{APPLICATION_STATUS_LABELS[f.status]}</span>
+                    <span>{labels.appStatus(f.status)}</span>
                     <span className="font-semibold tabular">{f.count}</span>
                   </div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-surface-2">
@@ -226,18 +230,18 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
               );
             })}
           </div>
-          <p className="mt-5 text-[13px] font-semibold">Skills acquired</p>
+          <p className="mt-5 text-[13px] font-semibold">{t('progress.skillsAcquired')}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {data.skillsAcquired.length === 0 && <span className="text-[13px] text-muted-foreground">Complete skill quests to grow this list.</span>}
+            {data.skillsAcquired.length === 0 && <span className="text-[13px] text-muted-foreground">{t('progress.skillsEmpty')}</span>}
             {data.skillsAcquired.map((s) => (
               <Badge key={s.name} tone={s.source === 'QUEST' ? 'green' : 'neutral'}>
-                {s.source === 'QUEST' && <GraduationCap />} {s.name} · {s.level}
+                {s.source === 'QUEST' && <GraduationCap />} {s.name} · {typeof s.level === 'number' ? labels.skillLevel(s.level) : s.level}
               </Badge>
             ))}
           </div>
           {data.completedQuests.length > 0 && (
             <>
-              <p className="mt-5 text-[13px] font-semibold">Completed quests</p>
+              <p className="mt-5 text-[13px] font-semibold">{t('progress.completedQuests')}</p>
               <ul className="mt-2 space-y-1.5">
                 {data.completedQuests.slice(0, 5).map((q) => (
                   <li key={q.id} className="flex items-center justify-between gap-3 text-[13px]">
@@ -255,26 +259,26 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
 
         <Card className="p-6">
           <CardEyebrow className="flex items-center gap-1.5">
-            <UserRoundCheck className="size-3.5" /> Orbit timeline
+            <UserRoundCheck className="size-3.5" /> {t('progress.timeline')}
           </CardEyebrow>
           <div className="mt-4 max-h-[520px] space-y-5 overflow-y-auto pr-1 scrollbar-thin">
-            {grouped.length === 0 && <p className="text-[13px] text-muted-foreground">Your story starts with your first quest.</p>}
+            {grouped.length === 0 && <p className="text-[13px] text-muted-foreground">{t('progress.timelineEmpty')}</p>}
             {grouped.map(([month, items]) => (
               <div key={month}>
                 <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-green-strong dark:text-green">{month}</p>
                 <ol className="relative space-y-3 border-l border-border pl-5">
-                  {items.map((t) => {
-                    const Icon = TIMELINE_ICON[t.type] ?? Sparkles;
+                  {items.map((item) => {
+                    const Icon = TIMELINE_ICON[item.type] ?? Sparkles;
                     return (
-                      <li key={t.id} className="relative">
+                      <li key={item.id} className="relative">
                         <span className="absolute -left-[31px] top-0 flex size-5 items-center justify-center rounded-full border border-border bg-surface">
                           <Icon className="size-3 text-green" />
                         </span>
-                        <p className="text-[13.5px] font-medium leading-snug">{t.title}</p>
+                        <p className="text-[13.5px] font-medium leading-snug">{item.title}</p>
                         <p className="text-[12px] text-muted-foreground">
-                          {format(new Date(t.date), 'd MMM')}
-                          {t.description ? ` · ${t.description}` : ''}
-                          {t.xp > 0 ? ` · +${t.xp} XP` : ''}
+                          {formatDate(item.date, 'd MMM')}
+                          {item.description ? ` · ${item.description}` : ''}
+                          {item.xp > 0 ? ` · +${item.xp} XP` : ''}
                         </p>
                       </li>
                     );

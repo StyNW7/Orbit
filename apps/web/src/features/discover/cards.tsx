@@ -20,9 +20,6 @@ import {
   Users,
 } from 'lucide-react';
 import {
-  GROWTH_TYPE_LABELS,
-  OPPORTUNITY_TYPE_LABELS,
-  WORK_MODE_LABELS,
   type BookView,
   type GrowthItemView,
   type JobMatchView,
@@ -44,33 +41,37 @@ import {
   useUpdateSaved,
 } from '@/hooks/queries';
 import { cn, daysUntil, friendlyDate } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 export function RelevanceBadge({ value }: { value: number }) {
+  const { t } = useT();
   return (
-    <Tooltip content="Deterministic relevance: gap overlap, career alignment and semantic similarity">
+    <Tooltip content={t('card.relevanceTip')}>
       <span
         className={cn(
           'inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold tabular',
           value >= 70 ? 'bg-muted-green text-green-strong dark:text-green' : value >= 45 ? 'bg-muted-orange text-orange-strong dark:text-orange' : 'bg-surface-2 text-muted-foreground',
         )}
       >
-        {value}% relevant
+        {t('common.relevant', { value })}
       </span>
     </Tooltip>
   );
 }
 
 export function WhyBlock({ why }: { why: RecommendationWhy }) {
+  const { t } = useT();
   return (
     <div className="mt-3 rounded-lg bg-surface-2/70 p-3 text-[12.5px]">
       <p className="text-foreground">
-        <span className="font-semibold">Why Orbit recommends it · </span>
+        <span className="font-semibold">{t('card.why')}</span>
         <span className="text-muted-foreground">{why.whyItMatters}</span>
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {why.improvesSkill && <Badge tone="green">Improves {why.improvesSkill}</Badge>}
-        {why.addressesGap && <Badge tone="orange">Closes gap: {why.addressesGap}</Badge>}
-        {why.supportsGoal && <Badge tone="neutral">Supports {why.supportsGoal}</Badge>}
+        {why.improvesSkill && <Badge tone="green">{t('card.improves', { skill: why.improvesSkill })}</Badge>}
+        {why.addressesGap && <Badge tone="orange">{t('card.closesGap', { gap: why.addressesGap })}</Badge>}
+        {why.supportsGoal && <Badge tone="neutral">{t('card.supports', { goal: why.supportsGoal })}</Badge>}
       </div>
     </div>
   );
@@ -84,11 +85,12 @@ function useSkillSlug() {
 function AddGapButton({ gap }: { gap: string | null }) {
   const slugOf = useSkillSlug();
   const add = useAddSkillToJourney();
+  const { t } = useT();
   const slug = slugOf(gap);
   if (!slug) return null;
   return (
     <Button size="sm" variant="soft" onClick={() => add.mutate(slug)} loading={add.isPending}>
-      <Route /> Add {gap} to Journey
+      <Route /> {t('card.addGap', { gap: gap ?? '' })}
     </Button>
   );
 }
@@ -100,6 +102,8 @@ export function JobCard({ job, highlight }: { job: JobMatchView; highlight?: boo
   const o = job.opportunity;
   const save = useSaveJob();
   const navigate = useNavigate();
+  const { t } = useT();
+  const labels = useLabels();
   const days = daysUntil(o.deadline);
   return (
     <Card id={`item-${o.id}`} className={cn('flex flex-col p-5 transition hover:border-border-strong', highlight && 'border-green shadow-[0_0_0_4px_var(--ring)]')}>
@@ -114,43 +118,43 @@ export function JobCard({ job, highlight }: { job: JobMatchView; highlight?: boo
         <MatchChip value={job.match.overall} />
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <Badge tone="neutral">{OPPORTUNITY_TYPE_LABELS[o.employmentType]}</Badge>
+        <Badge tone="neutral">{labels.oppType(o.employmentType)}</Badge>
         <Badge tone="outline">
           <MapPin /> {o.location}
         </Badge>
-        <Badge tone="outline">{WORK_MODE_LABELS[o.workMode]}</Badge>
+        <Badge tone="outline">{labels.workMode(o.workMode)}</Badge>
         {days !== null && days >= 0 && (
           <Badge tone={days <= 7 ? 'orange' : 'outline'}>
-            <Clock /> {days === 0 ? 'Closes today' : `Closes in ${days}d`}
+            <Clock /> {days === 0 ? t('date.closesToday') : t('date.closesIn', { days })}
           </Badge>
         )}
-        {o.isDemo && <Badge tone="outline">Demo listing</Badge>}
+        {o.isDemo && <Badge tone="outline">{t('card.demoListing')}</Badge>}
       </div>
       {job.match.reasons.length > 0 && (
         <p className="mt-3 text-[13px]">
-          <span className="font-semibold">Why you match: </span>
+          <span className="font-semibold">{t('card.whyMatch')}</span>
           <span className="text-muted-foreground">{job.match.reasons.slice(0, 3).join(' · ')}</span>
         </p>
       )}
       {job.match.missingSkills.length > 0 && (
         <p className="mt-1 text-[13px]">
-          <span className="font-semibold">Missing: </span>
+          <span className="font-semibold">{t('card.missing')}</span>
           <span className="text-muted-foreground">{job.match.missingSkills.slice(0, 3).map((m) => m.name).join(' · ')}</span>
         </p>
       )}
       <div className="mt-4 flex flex-wrap gap-2 pt-1">
         {job.saved ? (
           <Button size="sm" variant="soft" onClick={() => navigate(job.applicationId ? `/app/discover/applications/${job.applicationId}` : '/app/discover/applications')}>
-            <BookmarkCheck /> Tracking
+            <BookmarkCheck /> {t('common.tracking')}
           </Button>
         ) : (
           <Button size="sm" onClick={() => save.mutate(o.id)} loading={save.isPending}>
-            <BookmarkPlus /> Save & track
+            <BookmarkPlus /> {t('common.saveTrack')}
           </Button>
         )}
         <Button size="sm" variant="secondary" asChild>
           <Link to={`/app/discover/jobs/${o.id}`}>
-            View match <ArrowRight />
+            {t('common.viewMatch')} <ArrowRight />
           </Link>
         </Button>
       </div>
@@ -165,6 +169,8 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
   const save = useSaveItem();
   const update = useUpdateSaved();
   const { remind } = useNotificationMutations();
+  const { t } = useT();
+  const labels = useLabels();
   const isEvent = item.kind === 'EVENT';
   const Icon = isEvent ? CalendarDays : GraduationCap;
   const remindAt = () => {
@@ -181,8 +187,8 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge tone={isEvent ? 'orange' : 'green'}>{GROWTH_TYPE_LABELS[item.type]}</Badge>
-            {item.isDemo && <Badge tone="outline">Demo event</Badge>}
+            <Badge tone={isEvent ? 'orange' : 'green'}>{labels.growth(item.type)}</Badge>
+            {item.isDemo && <Badge tone="outline">{t('card.demoEvent')}</Badge>}
           </div>
           <h3 className="mt-1.5 text-[16px] font-semibold leading-snug">{item.title}</h3>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
@@ -190,28 +196,28 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
             {item.startsAt ? ` · ${friendlyDate(item.startsAt, true)}` : ''}
             {item.durationHours ? ` · ${item.durationHours}h` : ''}
             {item.cost ? ` · ${item.cost}` : ''}
-            {isEvent && item.location ? ` · ${item.isOnline ? 'Online' : item.location}` : ''}
+            {isEvent && item.location ? ` · ${item.isOnline ? t('card.online') : item.location}` : ''}
           </p>
         </div>
         <RelevanceBadge value={item.relevance} />
       </div>
       <p className="mt-3 line-clamp-2 text-[13.5px] text-muted-foreground">{item.description}</p>
       <WhyBlock why={item.why} />
-      {item.deadline && <p className="mt-2 text-[12.5px] font-medium text-orange-strong dark:text-orange">Register by {friendlyDate(item.deadline)}</p>}
+      {item.deadline && <p className="mt-2 text-[12.5px] font-medium text-orange-strong dark:text-orange">{t('card.registerBy', { date: friendlyDate(item.deadline) })}</p>}
       <div className="mt-4 flex flex-wrap gap-2">
         {item.saved ? (
           item.saved.status === 'COMPLETED' ? (
             <Badge tone="green" className="h-8 px-3 text-[12.5px]">
-              <CheckCircle2 /> Completed
+              <CheckCircle2 /> {t('common.completed')}
             </Badge>
           ) : (
             <Button size="sm" variant="soft" onClick={() => update.mutate({ id: item.saved!.id, status: 'COMPLETED' })} loading={update.isPending}>
-              <CheckCircle2 /> Mark {isEvent ? 'attended' : 'completed'}
+              <CheckCircle2 /> {isEvent ? t('card.markAttended') : t('card.markCompleted')}
             </Button>
           )
         ) : (
           <Button size="sm" onClick={() => save.mutate({ kind: item.kind === 'EVENT' ? 'EVENT' : 'RESOURCE', itemId: item.id })} loading={save.isPending}>
-            <BookmarkPlus /> Save
+            <BookmarkPlus /> {t('common.save')}
           </Button>
         )}
         <Button
@@ -220,20 +226,20 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
           loading={remind.isPending}
           onClick={() =>
             remind.mutate({
-              title: isEvent ? `${item.title} starts soon` : `Continue ${item.title}`,
+              title: isEvent ? t('card.remindStarts', { title: item.title }) : t('card.remindContinue', { title: item.title }),
               message: `${item.provider}${item.startsAt ? ` · ${friendlyDate(item.startsAt, true)}` : ''}`,
               scheduledAt: remindAt().toISOString(),
               actionUrl: `/app/discover?tab=growth&focus=${item.id}`,
             })
           }
         >
-          <Bell /> Remind me
+          <Bell /> {t('card.remind')}
         </Button>
         <AddGapButton gap={item.why.addressesGap} />
         {item.url && (
           <Button size="sm" variant="ghost" asChild>
             <a href={item.url} target="_blank" rel="noreferrer">
-              <ExternalLink /> Open
+              <ExternalLink /> {t('common.open')}
             </a>
           </Button>
         )}
@@ -248,6 +254,7 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
 export function BookCard({ book, highlight }: { book: BookView; highlight?: boolean }) {
   const save = useSaveItem();
   const update = useUpdateSaved();
+  const { t } = useT();
   return (
     <Card id={`item-${book.id}`} className={cn('flex gap-4 p-5', highlight && 'border-green shadow-[0_0_0_4px_var(--ring)]')}>
       <BookCover book={book} />
@@ -277,23 +284,23 @@ export function BookCard({ book, highlight }: { book: BookView; highlight?: bool
           {book.saved ? (
             book.saved.status === 'COMPLETED' ? (
               <Badge tone="green" className="h-8 px-3 text-[12.5px]">
-                <CheckCircle2 /> Read
+                <CheckCircle2 /> {t('card.read')}
               </Badge>
             ) : (
               <Button size="sm" variant="soft" onClick={() => update.mutate({ id: book.saved!.id, status: 'COMPLETED' })} loading={update.isPending}>
-                <CheckCircle2 /> Mark as read
+                <CheckCircle2 /> {t('card.markRead')}
               </Button>
             )
           ) : (
             <Button size="sm" onClick={() => save.mutate({ kind: 'BOOK', itemId: book.id })} loading={save.isPending}>
-              <BookmarkPlus /> Save
+              <BookmarkPlus /> {t('common.save')}
             </Button>
           )}
           <AddGapButton gap={book.why.addressesGap} />
           {book.infoUrl && (
             <Button size="sm" variant="ghost" asChild>
               <a href={book.infoUrl} target="_blank" rel="noreferrer">
-                <ExternalLink /> Details
+                <ExternalLink /> {t('card.details')}
               </a>
             </Button>
           )}
@@ -324,6 +331,7 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
   const save = useSaveItem();
   const addQuest = useAddCustomQuest();
   const slugOf = useSkillSlug();
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   return (
     <Card id={`item-${paper.id}`} className={cn('p-5', highlight && 'border-green shadow-[0_0_0_4px_var(--ring)]')}>
@@ -335,7 +343,7 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
           <h3 className="text-[16px] font-semibold leading-snug">{paper.title}</h3>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
             {paper.authors.slice(0, 3).join(', ')}
-            {paper.authors.length > 3 ? ' et al.' : ''}
+            {paper.authors.length > 3 ? t('card.etAl') : ''}
             {paper.year ? ` · ${paper.year}` : ''}
             {paper.venue ? ` · ${paper.venue}` : ''}
           </p>
@@ -345,7 +353,7 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
       <p className={cn('mt-3 text-[13.5px] text-muted-foreground', !expanded && 'line-clamp-3')}>{paper.abstract}</p>
       {paper.abstract.length > 220 && (
         <button className="mt-1 text-[12.5px] font-semibold text-green-strong dark:text-green" onClick={() => setExpanded((e) => !e)}>
-          {expanded ? 'Show less' : 'Read summary'}
+          {expanded ? t('card.showLess') : t('card.readSummary')}
         </button>
       )}
       <WhyBlock why={paper.why} />
@@ -356,29 +364,29 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
           loading={addQuest.isPending}
           onClick={() =>
             addQuest.mutate({
-              title: `Read: ${paper.title.length > 70 ? `${paper.title.slice(0, 67)}…` : paper.title}`,
+              title: t('card.paperQuest', { title: paper.title.length > 70 ? `${paper.title.slice(0, 67)}…` : paper.title }),
               description: paper.why.whyItMatters,
               category: 'KNOWLEDGE',
               skillSlug: slugOf(paper.why.improvesSkill) ?? undefined,
-              tasks: ['Read the abstract and conclusion', 'Write down three takeaways in your journal', 'Connect one idea to your current quest'],
+              tasks: [t('card.paperTask1'), t('card.paperTask2'), t('card.paperTask3')],
             })
           }
         >
-          <Plus /> Add to Knowledge Journey
+          <Plus /> {t('card.addKnowledge')}
         </Button>
         {paper.saved ? (
           <Badge tone="green" className="h-8 px-3 text-[12.5px]">
-            <BookmarkCheck /> Saved
+            <BookmarkCheck /> {t('common.saved')}
           </Badge>
         ) : (
           <Button size="sm" variant="secondary" onClick={() => save.mutate({ kind: 'PAPER', itemId: paper.id })} loading={save.isPending}>
-            <BookmarkPlus /> Save
+            <BookmarkPlus /> {t('common.save')}
           </Button>
         )}
         {paper.url && (
           <Button size="sm" variant="ghost" asChild>
             <a href={paper.url} target="_blank" rel="noreferrer">
-              <ExternalLink /> Source
+              <ExternalLink /> {t('card.details')}
             </a>
           </Button>
         )}
@@ -392,6 +400,7 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
 // ---------------------------------------------------------------------------
 export function PersonCard({ person, highlight }: { person: PersonView; highlight?: boolean }) {
   const save = useSaveItem();
+  const { t } = useT();
   const c = person.comparison;
   return (
     <Card id={`item-${person.id}`} className={cn('flex flex-col p-5', highlight && 'border-green shadow-[0_0_0_4px_var(--ring)]')}>
@@ -406,9 +415,9 @@ export function PersonCard({ person, highlight }: { person: PersonView; highligh
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge tone={person.kind === 'MENTOR' ? 'green' : 'neutral'}>
-              <Users /> {person.kind === 'MENTOR' ? 'Mentor' : 'Role model'}
+              <Users /> {person.kind === 'MENTOR' ? t('card.mentor') : t('card.roleModel')}
             </Badge>
-            {person.isDemo && <Badge tone="outline">Demo profile</Badge>}
+            {person.isDemo && <Badge tone="outline">{t('card.demoProfile')}</Badge>}
           </div>
           <h3 className="mt-1.5 text-[16px] font-semibold leading-snug">{person.name}</h3>
           <p className="text-[13px] text-muted-foreground">{person.headline}</p>
@@ -418,24 +427,24 @@ export function PersonCard({ person, highlight }: { person: PersonView; highligh
       <p className="mt-3 text-[13.5px] text-muted-foreground">{person.careerSummary}</p>
       {person.careerTransitions.length > 0 && (
         <ol className="mt-3 space-y-1.5 border-l-2 border-border pl-3.5">
-          {person.careerTransitions.map((t) => (
-            <li key={`${t.period}-${t.title}`} className="relative text-[12.5px]">
+          {person.careerTransitions.map((tr) => (
+            <li key={`${tr.period}-${tr.title}`} className="relative text-[12.5px]">
               <span className="absolute -left-[19px] top-1.5 size-2 rounded-full bg-green" />
-              <span className="font-semibold">{t.title}</span> <span className="text-muted-foreground">· {t.organization}</span>
-              <span className="ml-1 text-subtle-foreground">({t.period})</span>
+              <span className="font-semibold">{tr.title}</span> <span className="text-muted-foreground">· {tr.organization}</span>
+              <span className="ml-1 text-subtle-foreground">({tr.period})</span>
             </li>
           ))}
         </ol>
       )}
       <div className="mt-4 grid gap-3 rounded-xl bg-surface-2/70 p-3.5 text-[12.5px] sm:grid-cols-2">
-        <Compare title="Similarities" items={c.similarities} tone="green" />
-        <Compare title="Differences" items={c.differences} tone="orange" />
+        <Compare title={t('card.similarities')} items={c.similarities} tone="green" />
+        <Compare title={t('card.differences')} items={c.differences} tone="orange" />
         <div className="sm:col-span-2">
           <p className="flex gap-2 text-[13px] font-medium">
             <Quote className="size-4 shrink-0 text-green" /> {c.insight}
           </p>
           <p className="mt-1.5 text-muted-foreground">
-            <span className="font-semibold text-foreground">Recommended action: </span>
+            <span className="font-semibold text-foreground">{t('card.recommendedAction')}</span>
             {c.recommendedAction}
           </p>
         </div>
@@ -443,11 +452,11 @@ export function PersonCard({ person, highlight }: { person: PersonView; highligh
       <div className="mt-4 flex flex-wrap gap-2">
         {person.saved ? (
           <Badge tone="green" className="h-8 px-3 text-[12.5px]">
-            <BookmarkCheck /> Following
+            <BookmarkCheck /> {t('card.following')}
           </Badge>
         ) : (
           <Button size="sm" variant="secondary" onClick={() => save.mutate({ kind: 'ROLE_MODEL', itemId: person.id })} loading={save.isPending}>
-            <BookmarkPlus /> {person.kind === 'MENTOR' ? 'Save mentor' : 'Follow path'}
+            <BookmarkPlus /> {person.kind === 'MENTOR' ? t('card.saveMentor') : t('card.followPath')}
           </Button>
         )}
         {person.publicSources.map((s) => (

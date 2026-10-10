@@ -14,6 +14,7 @@ import {
   type OpportunityType,
   type WorkMode,
 } from '@orbit/shared';
+import { L } from '../../common/i18n/locale';
 
 export interface MatchJob {
   title: string;
@@ -154,9 +155,9 @@ export function computeJobMatch(job: MatchJob, user: MatchUser, similarity: numb
 
   const reasons: string[] = [];
   const types = new Set(user.experiences.map((e) => e.type));
-  if (types.has('LEADERSHIP') || types.has('ORGANIZATION')) reasons.push('Leadership');
-  if (user.technicalBackground) reasons.push('Technical Background');
-  if (types.has('PROJECT')) reasons.push('Project Experience');
+  if (types.has('LEADERSHIP') || types.has('ORGANIZATION')) reasons.push(L('Leadership', 'Kepemimpinan'));
+  if (user.technicalBackground) reasons.push(L('Technical Background', 'Latar Belakang Teknis'));
+  if (types.has('PROJECT')) reasons.push(L('Project Experience', 'Pengalaman Proyek'));
   for (const s of skills.matched) {
     if (reasons.length >= 5) break;
     if (!reasons.includes(s)) reasons.push(s);
@@ -165,9 +166,9 @@ export function computeJobMatch(job: MatchJob, user: MatchUser, similarity: numb
   const firstGap = skills.missing[0];
   const recommendedAction = firstGap
     ? firstGap.inJourney
-      ? `Keep progressing ${firstGap.name} in your Journey`
-      : `Add ${firstGap.name} to Journey`
-    : 'Prepare your application';
+      ? L(`Keep progressing ${firstGap.name} in your Journey`, `Lanjutkan progres ${firstGap.name} di Journey-mu`)
+      : L(`Add ${firstGap.name} to Journey`, `Tambahkan ${firstGap.name} ke Journey`)
+    : L('Prepare your application', 'Siapkan lamaranmu');
 
   return {
     overall: pct(overall),

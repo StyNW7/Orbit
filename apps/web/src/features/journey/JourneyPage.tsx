@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { BookMarked, Check, Map, Orbit as OrbitIcon, Plus, Route, Sparkles, Wand2 } from 'lucide-react';
-import { READINESS_CATEGORY_LABELS, type JourneyDetail, type MilestoneView } from '@orbit/shared';
+import type { JourneyDetail, MilestoneView } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge, Card, Input, Label, Progress, Textarea } from '@/components/ui/primitives';
 import { Dialog, DialogContent } from '@/components/ui/overlays';
@@ -10,6 +10,8 @@ import { CardSkeleton, EmptyState, ErrorState, PageHeader } from '@/components/c
 import { useAddCustomQuest, useBuildJourney, usePrimaryJourney } from '@/hooks/queries';
 import { usePageContext } from '@/stores/ui';
 import { cn } from '@/lib/utils';
+import { useT, type MessageKey } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 import { JourneyFlow } from './JourneyFlow';
 import { QuestCard } from './QuestCard';
 import { JournalView } from './JournalView';
@@ -20,7 +22,8 @@ type View = 'roadmap' | 'journal' | 'orbits';
 export default function JourneyPage() {
   const [params, setParams] = useSearchParams();
   const view = (params.get('view') as View) || 'roadmap';
-  usePageContext({ page: 'journey', label: view === 'journal' ? 'Career Journal' : view === 'orbits' ? 'My Orbits' : undefined });
+  const { t } = useT();
+  usePageContext({ page: 'journey', label: view === 'journal' ? t('journey.ctx.journal') : view === 'orbits' ? t('journey.ctx.orbits') : undefined });
   const setView = (v: string) => {
     const next = new URLSearchParams(params);
     next.set('view', v);
@@ -30,17 +33,17 @@ export default function JourneyPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Adaptive Career Journey" title="Turn ambition into action" description="Milestones and quests that adapt as your context changes. Progress here updates your readiness and Universe." />
+      <PageHeader eyebrow={t('journey.eyebrow')} title={t('journey.title')} description={t('journey.desc')} />
       <Tabs value={view} onValueChange={setView} className="mb-5">
         <TabsList>
           <TabsTrigger value="roadmap">
-            <Map /> Roadmap
+            <Map /> {t('journey.tab.roadmap')}
           </TabsTrigger>
           <TabsTrigger value="journal">
-            <BookMarked /> Journal
+            <BookMarked /> {t('journey.tab.journal')}
           </TabsTrigger>
           <TabsTrigger value="orbits">
-            <OrbitIcon /> My Orbits
+            <OrbitIcon /> {t('journey.tab.orbits')}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -52,6 +55,7 @@ export default function JourneyPage() {
 function Roadmap({ questParam, milestoneParam }: { questParam: string | null; milestoneParam: string | null }) {
   const { data: journey, isLoading, error, refetch } = usePrimaryJourney();
   const build = useBuildJourney();
+  const { t } = useT();
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
   if (isLoading) return <CardSkeleton lines={6} />;
@@ -60,11 +64,11 @@ function Roadmap({ questParam, milestoneParam }: { questParam: string | null; mi
       <Card>
         <EmptyState
           icon={Route}
-          title="Your next career path starts here."
-          description="Orbit turns your gaps into milestones and quests — each one connected to your readiness."
+          title={t('journey.emptyTitle')}
+          description={t('journey.emptyDesc')}
           action={
             <Button size="lg" variant="gradient" onClick={() => build.mutate(undefined)} loading={build.isPending}>
-              <Wand2 /> Generate my journey
+              <Wand2 /> {t('journey.generate')}
             </Button>
           }
         />
@@ -76,6 +80,8 @@ function Roadmap({ questParam, milestoneParam }: { questParam: string | null; mi
 
 function JourneyBody({ journey, questParam, milestoneParam }: { journey: JourneyDetail; questParam: string | null; milestoneParam: string | null }) {
   const build = useBuildJourney();
+  const { t } = useT();
+  const labels = useLabels();
   const [customOpen, setCustomOpen] = useState(false);
   const initial = useMemo(() => {
     if (questParam) return journey.milestones.find((m) => m.quests.some((q) => q.id === questParam))?.id;
@@ -98,33 +104,33 @@ function JourneyBody({ journey, questParam, milestoneParam }: { journey: Journey
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[20px] font-bold">{journey.title}</h2>
-              <Badge tone="green">Primary</Badge>
+              <Badge tone="green">{t('journey.primary')}</Badge>
             </div>
             <p className="mt-1 text-[13.5px] text-muted-foreground">
-              {completed}/{questCount} quests completed · {journey.earnedXp}/{journey.totalXp} XP earned
-              {journey.goal.readiness !== null ? ` · ${Math.round(journey.goal.readiness)}% ready` : ''}
+              {t('journey.summary', { done: completed, total: questCount, earned: journey.earnedXp, xp: journey.totalXp })}
+              {journey.goal.readiness !== null ? t('journey.readyPct', { score: Math.round(journey.goal.readiness) }) : ''}
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-40">
               <div className="mb-1 flex justify-between text-[12px] text-muted-foreground">
-                <span>Journey progress</span>
+                <span>{t('journey.progress')}</span>
                 <span className="font-semibold tabular text-foreground">{journey.progress}%</span>
               </div>
-              <Progress value={journey.progress} tone="gradient" label="Journey progress" />
+              <Progress value={journey.progress} tone="gradient" label={t('journey.progress')} />
             </div>
             <Button variant="secondary" size="sm" onClick={() => setCustomOpen(true)}>
-              <Plus /> Quest
+              <Plus /> {t('journey.addQuest')}
             </Button>
           </div>
         </div>
         {journey.canExpand && (
           <div className="flex flex-col gap-3 border-b border-border bg-muted-green/40 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-2 text-[13.5px]">
-              <Sparkles className="size-4 text-green" /> Orbit can generate the rest of your roadmap from your role template and gaps.
+              <Sparkles className="size-4 shrink-0 text-green" /> {t('journey.canExpand')}
             </p>
             <Button size="sm" onClick={() => build.mutate(undefined)} loading={build.isPending}>
-              Generate full roadmap
+              {t('journey.generateFull')}
             </Button>
           </div>
         )}
@@ -154,17 +160,17 @@ function JourneyBody({ journey, questParam, milestoneParam }: { journey: Journey
       </Card>
 
       {selected && (
-        <section aria-label={`${selected.title} quests`}>
+        <section aria-label={t('journey.quests', { title: selected.title })}>
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Milestone</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t('journey.milestone')}</p>
               <h3 className="text-[20px] font-bold">{selected.title}</h3>
               {selected.description && <p className="text-[14px] text-muted-foreground">{selected.description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              {selected.impact && <Badge tone="neutral">Improves {READINESS_CATEGORY_LABELS[selected.impact]}</Badge>}
+              {selected.impact && <Badge tone="neutral">{t('journey.improves', { category: labels.readiness(selected.impact) })}</Badge>}
               <Badge tone={selected.status === 'COMPLETED' ? 'green' : selected.status === 'IN_PROGRESS' ? 'orange' : 'outline'}>
-                {selected.status === 'COMPLETED' ? 'Completed' : selected.status === 'IN_PROGRESS' ? 'In progress' : 'Not started'} · {selected.progress}%
+                {t(`journey.status.${selected.status}` as MessageKey)} · {selected.progress}%
               </Badge>
             </div>
           </div>
@@ -183,6 +189,7 @@ function JourneyBody({ journey, questParam, milestoneParam }: { journey: Journey
 
 function CustomQuestDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const add = useAddCustomQuest();
+  const { t } = useT();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tasks, setTasks] = useState('');
@@ -192,24 +199,24 @@ function CustomQuestDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     .filter(Boolean);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="Add your own quest" description="Quests you create live in the Personal Growth milestone and count toward XP.">
+      <DialogContent title={t('journey.custom.title')} description={t('journey.custom.desc')}>
         <div className="space-y-3">
           <div>
-            <Label htmlFor="cq-title">Title</Label>
-            <Input id="cq-title" className="mt-1.5" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Run a usability test on my case study" />
+            <Label htmlFor="cq-title">{t('journey.custom.titleLabel')}</Label>
+            <Input id="cq-title" className="mt-1.5" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('journey.custom.titlePlaceholder')} maxLength={140} />
           </div>
           <div>
-            <Label htmlFor="cq-desc">Why it matters</Label>
+            <Label htmlFor="cq-desc">{t('journey.custom.why')}</Label>
             <Textarea id="cq-desc" className="mt-1.5" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="cq-tasks">Tasks (one per line)</Label>
-            <Textarea id="cq-tasks" className="mt-1.5" rows={4} value={tasks} onChange={(e) => setTasks(e.target.value)} placeholder={'Recruit three users\nRun the sessions\nSummarise findings'} />
+            <Label htmlFor="cq-tasks">{t('journey.custom.tasks')}</Label>
+            <Textarea id="cq-tasks" className="mt-1.5" rows={4} value={tasks} onChange={(e) => setTasks(e.target.value)} placeholder={t('journey.custom.tasksPlaceholder')} />
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             disabled={title.trim().length < 3 || list.length === 0}
@@ -228,7 +235,7 @@ function CustomQuestDialog({ open, onOpenChange }: { open: boolean; onOpenChange
               )
             }
           >
-            Add quest
+            {t('journey.custom.add')}
           </Button>
         </div>
       </DialogContent>

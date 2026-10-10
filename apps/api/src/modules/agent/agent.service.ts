@@ -19,7 +19,8 @@ import type { ChatMessage } from '../ai/ai.types';
 import { ContextBuilderService, type ContextPackage } from './context-builder.service';
 import { LangflowClient } from './langflow.client';
 import { PlannerEngine, type EngineResult } from './planner.engine';
-import { ORBIT_SYSTEM_PROMPT } from './system-prompt';
+import { ORBIT_SYSTEM_PROMPT, languageInstruction } from './system-prompt';
+import { L, currentLocale } from '../../common/i18n/locale';
 import { ToolRegistryService, toolDefinitions } from './tool-registry.service';
 
 type GroundedFallback = Error & { draft?: EngineResult };
@@ -90,7 +91,7 @@ export class AgentService {
         engine = 'langflow';
       } catch (error) {
         this.logger.warn(`Langflow failed, falling back: ${(error as Error).message}`);
-        notice = 'Langflow is unavailable right now — Orbit answered with its built-in reasoning.';
+        notice = L('Langflow is unavailable right now — Orbit answered with its built-in reasoning.', 'Langflow sedang tidak tersedia — Orbit menjawab dengan penalaran bawaannya.');
       }
     }
     if (!result && (await this.ai.isAvailable()) && this.modelIsInteractive()) {
@@ -103,7 +104,7 @@ export class AgentService {
         const draft = (error as GroundedFallback).draft;
         if (draft) result = draft;
         this.logger.warn(`Direct model failed, falling back: ${(error as Error).message}`);
-        notice = 'The AI model is slow or unavailable right now — Orbit answered with its built-in planner.';
+        notice = L('The AI model is slow or unavailable right now — Orbit answered with its built-in planner.', 'Model AI sedang lambat atau tidak tersedia — Orbit menjawab dengan planner bawaannya.');
       }
     }
     if (!result) {
@@ -170,7 +171,11 @@ export class AgentService {
   }
 
   private composeInput(message: string, context: ContextPackage): string {
-    return `[ORBIT CONTEXT]\n${JSON.stringify(context)}\n[/ORBIT CONTEXT]\n\n[USER MESSAGE]\n${message}`;
+    return `[ORBIT CONTEXT]\n${JSON.stringify(context)}\n[/ORBIT CONTEXT]\n\n[${languageInstruction(currentLocale())}]\n\n[USER MESSAGE]\n${message}`;
+  }
+
+  private systemPrompt(): string {
+    return `${ORBIT_SYSTEM_PROMPT}\n\n${languageInstruction(currentLocale())}`;
   }
 
   // -------------------------------------------------------------------------
@@ -195,13 +200,14 @@ export class AgentService {
     try {
       const res = await this.ai.chat(
         [
-          { role: 'system', content: ORBIT_SYSTEM_PROMPT },
+          { role: 'system', content: this.systemPrompt() },
           {
             role: 'user',
             content:
               `User question: ${message}\n\n` +
               `Verified Orbit analysis (from tools: ${draft.toolCalls.map((t) => t.tool).join(', ') || 'context'}):\n${draft.content}\n\n` +
-              `Rewrite this into your final answer for the user. Keep every fact, number and the four headings; make it warm, specific and concise. Do not add facts that are not above.`,
+              `Rewrite this into your final answer for the user. Keep every fact, number and the four headings; make it warm, specific and concise. Do not add facts that are not above.` +
+              (currentLocale() === 'id' ? ' Write the final answer in Bahasa Indonesia.' : ''),
           },
         ],
         { temperature: 0.3, maxTokens: 650, timeoutMs: this.config.env.AGENT_TIMEOUT_MS },
@@ -219,7 +225,7 @@ export class AgentService {
   private async runDirect(userId: string, conversationId: string, message: string, context: ContextPackage): Promise<EngineResult> {
     const history = await this.prisma.agentMessage.findMany({ where: { conversationId }, orderBy: { createdAt: 'desc' }, take: HISTORY_MESSAGES + 1 });
     const messages: ChatMessage[] = [
-      { role: 'system', content: ORBIT_SYSTEM_PROMPT },
+      { role: 'system', content: this.systemPrompt() },
       { role: 'system', content: `[ORBIT CONTEXT]\n${JSON.stringify(context)}` },
       ...history
         .reverse()

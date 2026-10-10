@@ -42,6 +42,8 @@ Design principle: *Bright, not noisy. Dynamic, not chaotic. Gamified, not childi
 - **Progress**: readiness history, category radar, skills, quests, applications, Orbit Timeline, level, XP and streak.
 - **Orbit Agent**: right-side drawer with page context, Markdown answers (Insight · Why it matters · Next best action · Expected impact), tool-call chips, actionable confirmation cards, and an audit log in Settings.
 - **Light and dark mode**: one-click toggle on every page (landing, auth, onboarding, app) with a circular reveal animation, plus a System option in Settings and the account menu.
+- **English & Bahasa Indonesia**: an EN | ID toggle on every page (also in Settings and the account menu). The choice is remembered per browser and sent to the API as `X-Orbit-Locale`, so Orbit Agent answers, the next best action, match reasons, recommendation reasons and onboarding analysis follow the same language. Dictionaries live in `apps/web/src/lib/i18n` (`id.ts` is type-checked against `en.ts`, so a missing translation fails the build); the API uses a request-scoped locale (`apps/api/src/common/i18n/locale.ts`). Catalog data (job descriptions, books, papers) keeps its original language.
+- **New-user guidance**: a dismissible "Getting started" checklist on Mission Control, a **Guide** page (`/app/guide`) explaining every area, and a FAQ on the landing page.
 
 ## Architecture
 

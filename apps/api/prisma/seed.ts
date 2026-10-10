@@ -8,6 +8,14 @@
 import '../src/load-env';
 import 'reflect-metadata';
 process.env.ORBIT_DISABLE_SCHEDULER = 'true';
+// Seeding is a long, write-heavy admin job: use the direct/session connection (DIRECT_URL) rather than
+// the serverless transaction pooler, which is tuned for short requests with a tiny connection limit.
+// The seed and the Nest app context each open a pool, so keep both well under the session pooler's limit.
+if (process.env.DIRECT_URL) {
+  const direct = new URL(process.env.DIRECT_URL);
+  if (!direct.searchParams.has('connection_limit')) direct.searchParams.set('connection_limit', '5');
+  process.env.DATABASE_URL = direct.toString();
+}
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';

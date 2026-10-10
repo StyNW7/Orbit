@@ -41,3 +41,15 @@ What improves if they do it (skill match, application readiness, etc.).
 Add a short bulleted plan or a small table only when it genuinely helps.
 When you propose a write action (journey change, saving a job, reminders, progress updates),
 tell the user that a confirmation card is shown below your answer.`;
+
+/** Appended to the system prompt so the model answers in the user's interface language. */
+export function languageInstruction(locale: 'en' | 'id'): string {
+  return locale === 'id'
+    ? `LANGUAGE: The user is using Orbit in Bahasa Indonesia. Write your entire answer in natural, friendly Bahasa Indonesia (use "kamu"), including the section headings:
+### Insight
+### Kenapa ini penting
+### Langkah terbaik berikutnya
+### Dampak yang diharapkan
+Keep product names (Orbit, Mission Control, Career Universe, Journey, Quest, XP), skill names, job titles and company names exactly as they appear in the data.`
+    : 'LANGUAGE: Answer in clear, friendly English.';
+}

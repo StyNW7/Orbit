@@ -3,6 +3,7 @@ import type {
   AgentActionStatus,
   AgentActionType,
   AgentEngine,
+  AppLocale,
   AgentToolName,
   ApplicationStatus,
   EdgeRelationship,
@@ -821,6 +822,8 @@ export interface AgentChatInput {
   message: string;
   conversationId?: string;
   pageContext?: AgentPageContext;
+  /** Language the agent should answer in (defaults to the X-Orbit-Locale header, then English). */
+  locale?: AppLocale;
 }
 
 export interface AgentChatResponse {

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { BellRing, BrainCircuit, CheckCircle2, CircleAlert, Cpu, Database, History, LogOut, Monitor, Moon, Palette, ShieldCheck, Sun, Workflow } from 'lucide-react';
-import { AGENT_ENGINE_LABELS, type AgentActionView } from '@orbit/shared';
+import { BellRing, BrainCircuit, Check, CheckCircle2, CircleAlert, Cpu, Database, History, Languages, LogOut, Monitor, Moon, Palette, ShieldCheck, Sun, Workflow } from 'lucide-react';
+import type { AgentActionView } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge, Card } from '@/components/ui/primitives';
 import { PageHeader, SectionTitle } from '@/components/common/states';
@@ -10,6 +10,8 @@ import { useUiStore, type ThemePreference } from '@/stores/ui';
 import { authMode, signOut } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { centerOf, cn, relative } from '@/lib/utils';
+import { LOCALES, useI18nStore, useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 export default function SettingsPage() {
   const { data: me } = useMe();
@@ -18,142 +20,167 @@ export default function SettingsPage() {
   const theme = useUiStore((s) => s.theme);
   const setTheme = useUiStore((s) => s.setTheme);
   const navigate = useNavigate();
+  const { t, locale } = useT();
+  const labels = useLabels();
+  const setLocale = useI18nStore((s) => s.setLocale);
   const notifPermission = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="Settings" title="Settings" description="Account, appearance, notifications and how Orbit’s AI is running." />
+      <PageHeader eyebrow={t('settings.eyebrow')} title={t('settings.title')} description={t('settings.desc')} />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="p-6">
-          <SectionTitle icon={ShieldCheck} title="Account" />
+          <SectionTitle icon={ShieldCheck} title={t('settings.account')} />
           <dl className="space-y-2 text-[14px]">
             <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Name</dt>
+              <dt className="text-muted-foreground">{t('settings.name')}</dt>
               <dd className="font-medium">{me?.user.name}</dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Email</dt>
+              <dt className="text-muted-foreground">{t('settings.email')}</dt>
               <dd className="font-medium">{me?.user.email}</dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Authentication</dt>
+              <dt className="text-muted-foreground">{t('settings.auth')}</dt>
               <dd>
-                <Badge tone="green">{authMode === 'supabase' ? 'Supabase Auth' : 'Orbit local auth'}</Badge>
+                <Badge tone="green">{authMode === 'supabase' ? t('settings.authSupabase') : t('settings.authLocal')}</Badge>
               </dd>
             </div>
           </dl>
           <Button variant="secondary" className="mt-5" onClick={() => void signOut().then(() => navigate('/'))}>
-            <LogOut /> Sign out
+            <LogOut /> {t('common.signOut')}
           </Button>
         </Card>
 
         <Card className="p-6">
-          <SectionTitle icon={Palette} title="Appearance" />
-          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Theme">
+          <SectionTitle icon={Palette} title={t('settings.appearance')} />
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('theme.label')}>
             {(
               [
-                { value: 'light', label: 'Light', icon: Sun },
-                { value: 'dark', label: 'Dark', icon: Moon },
-                { value: 'system', label: 'System', icon: Monitor },
+                { value: 'light', label: t('theme.light'), icon: Sun },
+                { value: 'dark', label: t('theme.dark'), icon: Moon },
+                { value: 'system', label: t('theme.system'), icon: Monitor },
               ] as { value: ThemePreference; label: string; icon: typeof Sun }[]
-            ).map((t) => (
+            ).map((th) => (
               <button
-                key={t.value}
+                key={th.value}
                 role="radio"
-                aria-checked={theme === t.value}
-                onClick={(e) => setTheme(t.value, centerOf(e.currentTarget))}
-                className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-[13px] font-medium transition', theme === t.value ? 'border-green bg-muted-green text-green-strong dark:text-green' : 'border-border hover:border-border-strong')}
+                aria-checked={theme === th.value}
+                onClick={(e) => setTheme(th.value, centerOf(e.currentTarget))}
+                className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-[13px] font-medium transition', theme === th.value ? 'border-green bg-muted-green text-green-strong dark:text-green' : 'border-border hover:border-border-strong')}
               >
-                <t.icon className="size-5" /> {t.label}
+                <th.icon className="size-5" /> {th.label}
+              </button>
+            ))}
+          </div>
+          <p className="mb-2.5 mt-5 flex items-center gap-2 text-[14px] font-semibold">
+            <Languages className="size-4 text-green" /> {t('settings.language')}
+          </p>
+          <p className="-mt-1 mb-3 text-[13px] text-muted-foreground">{t('lang.description')}</p>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('settings.language')}>
+            {LOCALES.map((l) => (
+              <button
+                key={l.value}
+                role="radio"
+                aria-checked={locale === l.value}
+                onClick={() => setLocale(l.value)}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl border p-3.5 text-left text-[13.5px] font-medium transition',
+                  locale === l.value ? 'border-green bg-muted-green text-green-strong dark:text-green' : 'border-border hover:border-border-strong',
+                )}
+              >
+                <span className={cn('flex size-8 items-center justify-center rounded-lg text-[12px] font-bold', locale === l.value ? 'bg-green text-white' : 'bg-surface-2 text-muted-foreground')}>{l.short}</span>
+                <span className="flex-1">{l.label}</span>
+                {locale === l.value && <Check className="size-4" />}
               </button>
             ))}
           </div>
           <div className="mt-5 flex items-start justify-between gap-4 rounded-xl bg-surface-2 p-4">
             <div>
               <p className="flex items-center gap-2 text-[14px] font-semibold">
-                <BellRing className="size-4 text-orange" /> Notifications
+                <BellRing className="size-4 text-orange" /> {t('settings.notifications')}
               </p>
-              <p className="mt-1 text-[13px] text-muted-foreground">In-app reminders for deadlines, events and weekly reviews are always on. Orbit is installable as an app (PWA).</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">{t('settings.notificationsDesc')}</p>
             </div>
             {notifPermission === 'default' && (
               <Button size="sm" variant="secondary" onClick={() => void Notification.requestPermission()}>
-                Allow browser alerts
+                {t('settings.allowAlerts')}
               </Button>
             )}
-            {notifPermission === 'granted' && <Badge tone="green">Browser alerts on</Badge>}
+            {notifPermission === 'granted' && <Badge tone="green">{t('settings.alertsOn')}</Badge>}
           </div>
         </Card>
 
         <Card className="p-6 lg:col-span-2">
           <SectionTitle
             icon={BrainCircuit}
-            title="Orbit Career Agent"
+            title={t('settings.agent')}
             action={
               <Button size="sm" variant="ghost" onClick={() => void refetch()} loading={isFetching}>
-                Re-check
+                {t('settings.recheck')}
               </Button>
             }
           />
           {status ? (
             <div className="grid gap-3 md:grid-cols-4">
-              <StatusTile icon={Workflow} title="Active engine" value={AGENT_ENGINE_LABELS[status.activeEngine]} ok detail={status.activeEngine === 'planner' ? 'Deterministic tools + templated reasoning' : 'Model-driven reasoning with tools'} />
+              <StatusTile icon={Workflow} title={t('settings.engine')} value={labels.engine(status.activeEngine)} ok detail={status.activeEngine === 'planner' ? t('settings.enginePlanner') : t('settings.engineModel')} />
               <StatusTile
                 icon={Workflow}
-                title="Langflow"
+                title={t('settings.langflow')}
                 value={
                   !status.langflow.configured
-                    ? 'Not configured'
+                    ? t('settings.lf.notConfigured')
                     : !status.langflow.reachable
-                      ? 'Unreachable'
+                      ? t('settings.lf.unreachable')
                       : status.langflow.skippedReason
-                        ? 'Standing by'
-                        : 'Connected'
+                        ? t('settings.lf.standingBy')
+                        : t('settings.lf.connected')
                 }
                 ok={status.langflow.reachable && !status.langflow.skippedReason}
                 detail={
                   status.langflow.skippedReason ??
                   (status.langflow.flowId
-                    ? `Flow ${status.langflow.flowId.slice(0, 8)}… · model: ${status.langflow.modelProvider}`
-                    : 'Run pnpm langflow:setup to route the agent through Langflow')
+                    ? t('settings.lf.flow', { id: status.langflow.flowId.slice(0, 8), provider: status.langflow.modelProvider })
+                    : t('settings.lf.setup'))
                 }
               />
               <StatusTile
                 icon={Cpu}
-                title="AI model"
+                title={t('settings.model')}
                 value={`${status.ai.provider} · ${status.ai.model}`}
                 ok={status.ai.reachable && status.ai.interactive}
                 detail={
                   !status.ai.reachable
-                    ? 'Unavailable — Orbit uses deterministic fallbacks'
+                    ? t('settings.modelUnavailable')
                     : status.ai.throughput
-                      ? `${status.ai.throughput.evalTps} tok/s on this machine${status.ai.interactive ? '' : ' — too slow for live answers'}`
-                      : 'Hosted provider'
+                      ? `${t('settings.modelSpeed', { tps: status.ai.throughput.evalTps })}${status.ai.interactive ? '' : t('settings.modelSlow')}`
+                      : t('settings.modelHosted')
                 }
               />
-              <StatusTile icon={Database} title="Embeddings" value={status.embeddings.provider} ok detail={status.embeddings.model} />
+              <StatusTile icon={Database} title={t('settings.embeddings')} value={status.embeddings.provider} ok detail={status.embeddings.model} />
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Checking agent status…</p>
+            <p className="text-sm text-muted-foreground">{t('settings.checking')}</p>
           )}
           <p className="mt-4 text-[12.5px] text-muted-foreground">
-            Readiness and match scores are always calculated by Orbit’s deterministic engines. The AI explains, extracts and reasons — and asks before important changes.
+            {t('settings.aiNote')}
           </p>
         </Card>
 
         <Card className="p-6 lg:col-span-2">
-          <SectionTitle icon={History} title="Agent activity log" />
+          <SectionTitle icon={History} title={t('settings.log')} />
           {audit.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No agent activity yet. Ask Orbit a question to see how it uses its tools.</p>
+            <p className="text-sm text-muted-foreground">{t('settings.logEmpty')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-[13px]">
                 <thead className="text-[11.5px] uppercase tracking-[0.06em] text-muted-foreground">
                   <tr className="border-b border-border">
-                    <th className="py-2 pr-3 font-semibold">Tool</th>
-                    <th className="py-2 pr-3 font-semibold">Level</th>
-                    <th className="py-2 pr-3 font-semibold">Summary</th>
-                    <th className="py-2 pr-3 font-semibold">Status</th>
-                    <th className="py-2 font-semibold">When</th>
+                    <th className="py-2 pr-3 font-semibold">{t('settings.col.tool')}</th>
+                    <th className="py-2 pr-3 font-semibold">{t('settings.col.level')}</th>
+                    <th className="py-2 pr-3 font-semibold">{t('settings.col.summary')}</th>
+                    <th className="py-2 pr-3 font-semibold">{t('settings.col.status')}</th>
+                    <th className="py-2 font-semibold">{t('settings.col.when')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -161,10 +188,10 @@ export default function SettingsPage() {
                     <tr key={a.id} className="border-b border-border last:border-0">
                       <td className="py-2.5 pr-3 font-mono text-[12px]">{a.tool}</td>
                       <td className="py-2.5 pr-3">
-                        <Badge tone={a.level === 'WRITE' ? 'orange' : a.level === 'SUGGEST' ? 'green' : 'neutral'}>{a.level}</Badge>
+                        <Badge tone={a.level === 'WRITE' ? 'orange' : a.level === 'SUGGEST' ? 'green' : 'neutral'}>{labels.actionLevel(a.level)}</Badge>
                       </td>
                       <td className="max-w-[360px] truncate py-2.5 pr-3 text-muted-foreground">{a.resultSummary ?? a.description}</td>
-                      <td className="py-2.5 pr-3">{a.status.replace('_', ' ').toLowerCase()}</td>
+                      <td className="py-2.5 pr-3">{labels.actionStatus(a.status)}</td>
                       <td className="py-2.5 text-subtle-foreground">{relative(a.createdAt)}</td>
                     </tr>
                   ))}

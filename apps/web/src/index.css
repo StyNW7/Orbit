@@ -30,8 +30,9 @@
   --ring: rgba(10, 180, 106, 0.35);
   --graph-label: #15201b;
   --graph-edge: #d4ddd8;
-  --shadow-card: 0 1px 2px rgba(16, 23, 20, 0.04), 0 8px 24px -16px rgba(16, 23, 20, 0.12);
-  --shadow-pop: 0 12px 40px -12px rgba(16, 23, 20, 0.22);
+  --shadow-card: 0 1px 2px rgba(16, 23, 20, 0.04), 0 1px 1px rgba(16, 23, 20, 0.02), 0 10px 28px -18px rgba(16, 23, 20, 0.16);
+  --shadow-pop: 0 18px 48px -14px rgba(16, 23, 20, 0.24), 0 2px 6px rgba(16, 23, 20, 0.04);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .dark {
@@ -49,8 +50,9 @@
   --ring: rgba(10, 180, 106, 0.45);
   --graph-label: #e8efeb;
   --graph-edge: #2c3a33;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -16px rgba(0, 0, 0, 0.5);
-  --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -18px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 18px 52px -14px rgba(0, 0, 0, 0.65);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 @theme inline {
@@ -137,6 +139,10 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
     color: var(--foreground);
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
   ::selection {
     background: rgba(10, 180, 106, 0.18);
@@ -167,8 +173,12 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow-card);
+    border-radius: 14px;
+    box-shadow: var(--card-highlight), var(--shadow-card);
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
   }
   .skeleton {
     background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
@@ -183,6 +193,12 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
+  }
+  /* Soft frosted surface for floating panels. */
+  .glass {
+    background: color-mix(in oklab, var(--surface) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
   }
   .no-scrollbar {
     scrollbar-width: none;
@@ -294,6 +310,25 @@
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/* Page-level scrollbar that matches the theme. */
+@supports not (scrollbar-width: thin) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 3px solid var(--background);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+html {
+  scrollbar-color: var(--border-strong) var(--background);
 }
 
 @media (prefers-reduced-motion: reduce) {

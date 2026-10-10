@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { ArrowLeft, BriefcaseBusiness, Clock, FolderKanban } from 'lucide-react';
-import { APPLICATION_PIPELINE, APPLICATION_STATUS_LABELS, type ApplicationView } from '@orbit/shared';
+import { APPLICATION_PIPELINE, type ApplicationView } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge, Card, Progress } from '@/components/ui/primitives';
 import { CardSkeleton, EmptyState, ErrorState, PageHeader } from '@/components/common/states';
@@ -8,9 +8,13 @@ import { MatchChip } from '@/components/common/MatchChip';
 import { useApplications } from '@/hooks/queries';
 import { usePageContext } from '@/stores/ui';
 import { cn, daysUntil } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 export default function ApplicationsPage() {
-  usePageContext({ page: 'application', label: 'Applications' });
+  const { t } = useT();
+  const labels = useLabels();
+  usePageContext({ page: 'application', label: t('apps.back') });
   const { data, isLoading, error, refetch } = useApplications();
   const closed = data?.filter((a) => a.status === 'REJECTED' || a.status === 'WITHDRAWN') ?? [];
 
@@ -18,10 +22,10 @@ export default function ApplicationsPage() {
     <div>
       <Button variant="ghost" size="sm" asChild className="mb-3">
         <Link to="/app/discover">
-          <ArrowLeft /> Discover
+          <ArrowLeft /> {t('nav.discover')}
         </Link>
       </Button>
-      <PageHeader eyebrow="Application tracking" title="Your applications" description="Save, prepare, apply and follow up — Orbit watches deadlines and nudges you at the right time." />
+      <PageHeader eyebrow={t('apps.eyebrow')} title={t('apps.title')} description={t('apps.desc')} />
       {error ? (
         <ErrorState error={error} onRetry={() => void refetch()} />
       ) : isLoading ? (
@@ -30,11 +34,11 @@ export default function ApplicationsPage() {
         <Card>
           <EmptyState
             icon={FolderKanban}
-            title="No applications yet"
-            description="Save a job from Discover — Orbit will detect its deadline and remind you."
+            title={t('apps.emptyTitle')}
+            description={t('apps.emptyDesc')}
             action={
               <Button asChild>
-                <Link to="/app/discover?tab=jobs">Find opportunities</Link>
+                <Link to="/app/discover?tab=jobs">{t('apps.find')}</Link>
               </Button>
             }
           />
@@ -46,9 +50,9 @@ export default function ApplicationsPage() {
               {APPLICATION_PIPELINE.map((status) => {
                 const items = data.filter((a) => a.status === status);
                 return (
-                  <section key={status} className="rounded-xl bg-surface-2/70 p-2.5" aria-label={APPLICATION_STATUS_LABELS[status]}>
+                  <section key={status} className="rounded-xl bg-surface-2/70 p-2.5" aria-label={labels.appStatus(status)}>
                     <div className="mb-2 flex items-center justify-between px-1">
-                      <h2 className="text-[13px] font-semibold">{APPLICATION_STATUS_LABELS[status]}</h2>
+                      <h2 className="text-[13px] font-semibold">{labels.appStatus(status)}</h2>
                       <span className="rounded-md bg-surface px-1.5 text-[11.5px] font-semibold tabular text-muted-foreground">{items.length}</span>
                     </div>
                     <div className="space-y-2">
@@ -64,7 +68,7 @@ export default function ApplicationsPage() {
           </div>
           {closed.length > 0 && (
             <div className="mt-6">
-              <h2 className="mb-2 text-[14px] font-semibold text-muted-foreground">Closed</h2>
+              <h2 className="mb-2 text-[14px] font-semibold text-muted-foreground">{t('apps.closed')}</h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {closed.map((a) => (
                   <AppCard key={a.id} app={a} />
@@ -79,6 +83,7 @@ export default function ApplicationsPage() {
 }
 
 function AppCard({ app }: { app: ApplicationView }) {
+  const { t } = useT();
   const days = daysUntil(app.deadline);
   return (
     <Link to={`/app/discover/applications/${app.id}`} className="card block p-3 transition hover:-translate-y-0.5 hover:border-border-strong">
@@ -95,12 +100,12 @@ function AppCard({ app }: { app: ApplicationView }) {
         <MatchChip value={app.matchScore} className="px-1.5 py-0.5 text-[11px]" />
         {days !== null && days >= 0 && ['SAVED', 'PREPARING'].includes(app.status) && (
           <Badge tone={days <= 3 ? 'orange' : 'outline'} className={cn('text-[11px]')}>
-            <Clock /> {days}d
+            <Clock /> {t('date.daysShort', { days })}
           </Badge>
         )}
       </div>
-      {['SAVED', 'PREPARING'].includes(app.status) && <Progress value={app.prepProgress} className="mt-2.5 h-1" label="Preparation progress" />}
-      <p className="mt-2 line-clamp-2 text-[11.5px] text-muted-foreground">Next: {app.nextAction}</p>
+      {['SAVED', 'PREPARING'].includes(app.status) && <Progress value={app.prepProgress} className="mt-2.5 h-1" label={t('apps.prepProgress')} />}
+      <p className="mt-2 line-clamp-2 text-[11.5px] text-muted-foreground">{t('apps.next', { action: app.nextAction })}</p>
     </Link>
   );
 }

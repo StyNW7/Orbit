@@ -7,10 +7,21 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { AuthResult, SessionUser } from '@orbit/shared';
 import { useSessionStore } from '@/stores/session';
+import { getLocale, translate } from '@/lib/i18n';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+// Only the project origin is valid (a URL copied with `/rest/v1/` breaks every auth call).
+const SUPABASE_URL = toOrigin(import.meta.env.VITE_SUPABASE_URL as string | undefined);
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:4000/api';
+
+function toOrigin(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  try {
+    return new URL(value.trim()).origin;
+  } catch {
+    return value.trim();
+  }
+}
 
 export const authMode: 'supabase' | 'local' = SUPABASE_URL && SUPABASE_ANON_KEY ? 'supabase' : 'local';
 
@@ -44,19 +55,23 @@ export async function getAccessToken(): Promise<string | null> {
 async function localAuth(path: 'signin' | 'signup', body: Record<string, string>): Promise<AuthResult> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/auth/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    res = await fetch(`${API_URL}/auth/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Orbit-Locale': getLocale() },
+      body: JSON.stringify(body),
+    });
   } catch {
-    throw new Error('Orbit cannot reach the server. Is the API running?');
+    throw new Error(translate('error.apiUnreachable'));
   }
   const payload = await res.json().catch(() => null);
-  if (!res.ok || !payload?.success) throw new Error(payload?.error?.message ?? 'Authentication failed.');
+  if (!res.ok || !payload?.success) throw new Error(payload?.error?.message ?? translate('error.authFailed'));
   return payload.data as AuthResult;
 }
 
 export async function signIn(email: string, password: string): Promise<SessionUser> {
   if (supabase) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.session) throw new Error(error?.message ?? 'Sign in failed.');
+    if (error || !data.session) throw new Error(error?.message ?? translate('error.signInFailed'));
     const user: SessionUser = { id: data.user.id, email: data.user.email ?? email, name: (data.user.user_metadata?.name as string) ?? email, avatarUrl: null };
     useSessionStore.getState().setSession(data.session.access_token, user);
     return user;
@@ -70,7 +85,7 @@ export async function signUp(name: string, email: string, password: string): Pro
   if (supabase) {
     const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
     if (error) throw new Error(error.message);
-    if (!data.session) throw new Error('Check your inbox to confirm your email, then sign in.');
+    if (!data.session) throw new Error(translate('error.confirmEmail'));
     const user: SessionUser = { id: data.user!.id, email, name, avatarUrl: null };
     useSessionStore.getState().setSession(data.session.access_token, user);
     return user;

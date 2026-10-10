@@ -4,6 +4,7 @@ import { AlertTriangle, RefreshCw, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/primitives';
 import { errorMessage } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export function PageHeader({
@@ -78,16 +79,17 @@ export function EmptyState({
 }
 
 export function ErrorState({ error, onRetry, className }: { error: unknown; onRetry?: () => void; className?: string }) {
+  const { t } = useT();
   return (
     <div role="alert" className={cn('flex flex-col items-center justify-center px-6 py-14 text-center', className)}>
       <div className="mb-3 flex size-11 items-center justify-center rounded-2xl bg-muted-danger">
         <AlertTriangle className="size-5 text-danger" />
       </div>
-      <h3 className="font-semibold">We couldn’t load this</h3>
+      <h3 className="font-semibold">{t('state.errorTitle')}</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{errorMessage(error)}</p>
       {onRetry && (
         <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>
-          <RefreshCw /> Try again
+          <RefreshCw /> {t('common.tryAgain')}
         </Button>
       )}
     </div>

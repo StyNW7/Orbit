@@ -10,6 +10,7 @@ import { CareerContextService, type CareerContext } from '../career/career-conte
 import { ReadinessService } from '../career/readiness.service';
 import { DiscoverService } from '../discover/discover.service';
 import { buildCareerGraph, type BuilderInput, type BuilderSkill, type BuiltGraph } from './graph.builder';
+import { L } from '../../common/i18n/locale';
 
 const SKILL_SLUG_BY_NAME = new Map(SKILLS.map((s) => [s.name, s.slug]));
 const SUBMITTED: string[] = ['APPLIED', 'ASSESSMENT', 'INTERVIEW', 'OFFER'];
@@ -338,11 +339,11 @@ export class GraphService {
       const quest = ctx.quests.find((q) => q.relatedSkill?.slug === slug && q.status !== 'COMPLETED');
       return quest
         ? {
-            title: `Continue “${quest.title}”`,
-            reason: `${name} is already part of your journey (${quest.progress}% complete).`,
-            expectedImpact: 'Each completed task raises this skill and your readiness.',
+            title: L(`Continue “${quest.title}”`, `Lanjutkan “${quest.title}”`),
+            reason: L(`${name} is already part of your journey (${quest.progress}% complete).`, `${name} sudah menjadi bagian dari journey-mu (${quest.progress}% selesai).`),
+            expectedImpact: L('Each completed task raises this skill and your readiness.', 'Setiap tugas yang selesai menaikkan skill ini dan kesiapanmu.'),
             kind: 'QUEST_TASK',
-            actionLabel: 'Open Quest',
+            actionLabel: L('Open Quest', 'Buka Quest'),
             actionUrl: `/app/journey?quest=${quest.id}`,
           }
         : null;
@@ -357,10 +358,13 @@ export class GraphService {
     const tpl = questTemplateForSkill(slug);
     return {
       title: tpl.title,
-      reason: requiredByJobs > 0 ? `Required by ${requiredByJobs} matching job${requiredByJobs === 1 ? '' : 's'} aligned with your target role.` : `A core requirement for ${ctx.primaryGoal.role.title}.`,
-      expectedImpact: `Career Readiness +${delta} estimated points.`,
+      reason:
+        requiredByJobs > 0
+          ? L(`Required by ${requiredByJobs} matching job${requiredByJobs === 1 ? '' : 's'} aligned with your target role.`, `Dibutuhkan oleh ${requiredByJobs} lowongan yang cocok dengan target peranmu.`)
+          : L(`A core requirement for ${ctx.primaryGoal.role.title}.`, `Kebutuhan inti untuk ${ctx.primaryGoal.role.title}.`),
+      expectedImpact: L(`Career Readiness +${delta} estimated points.`, `Estimasi Kesiapan Karier +${delta} poin.`),
       kind: 'ADD_SKILL',
-      actionLabel: 'Add to Journey',
+      actionLabel: L('Add to Journey', 'Tambah ke Journey'),
       actionUrl: '/app/journey',
       action: { type: 'ADD_SKILL_TO_JOURNEY', payload: { skillSlug: slug } },
     };
@@ -427,25 +431,25 @@ function linkFor(n: GraphNode): NodeDetail['link'] {
   const id = n.entityId;
   switch (n.type) {
     case 'OPPORTUNITY':
-      return { label: 'View opportunity', url: `/app/discover/jobs/${id}` };
+      return { label: L('View opportunity', 'Lihat peluang'), url: `/app/discover/jobs/${id}` };
     case 'QUEST':
-      return { label: 'Open quest', url: `/app/journey?quest=${id}` };
+      return { label: L('Open quest', 'Buka quest'), url: `/app/journey?quest=${id}` };
     case 'GOAL':
-      return { label: 'Open journey', url: `/app/journey?milestone=${id}` };
+      return { label: L('Open journey', 'Buka journey'), url: `/app/journey?milestone=${id}` };
     case 'BOOK':
     case 'PAPER':
-      return { label: 'Open in Discover', url: `/app/discover?tab=knowledge&focus=${id}` };
+      return { label: L('Open in Discover', 'Buka di Jelajahi'), url: `/app/discover?tab=knowledge&focus=${id}` };
     case 'EVENT':
     case 'COURSE':
-      return { label: 'Open in Discover', url: `/app/discover?tab=growth&focus=${id}` };
+      return { label: L('Open in Discover', 'Buka di Jelajahi'), url: `/app/discover?tab=growth&focus=${id}` };
     case 'ROLE_MODEL':
     case 'MENTOR':
-      return { label: 'Compare with you', url: `/app/discover?tab=people&focus=${id}` };
+      return { label: L('Compare with you', 'Bandingkan denganmu'), url: `/app/discover?tab=people&focus=${id}` };
     case 'EXPERIENCE':
     case 'PROJECT':
     case 'COMPETITION':
     case 'CERTIFICATION':
-      return { label: 'View in profile', url: '/app/profile' };
+      return { label: L('View in profile', 'Lihat di profil'), url: '/app/profile' };
     case 'CAREER_ROLE':
       return { label: 'Career Intelligence', url: '/app/profile' };
     default:

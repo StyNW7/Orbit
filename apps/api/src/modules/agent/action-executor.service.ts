@@ -12,6 +12,7 @@ import { JourneysService } from '../journeys/journeys.service';
 import { NotificationsService } from '../notifications/notifications.module';
 import { GoalsService } from '../profiles/goals.service';
 import { QuestsService } from '../quests/quests.service';
+import { L } from '../../common/i18n/locale';
 
 /**
  * Executes agent actions after explicit human confirmation. Every button the
@@ -55,25 +56,25 @@ export class ActionExecutorService {
           },
           'AGENT',
         );
-        return { message: `Added “${title}” to your journey.`, navigateTo: '/app/journey' };
+        return { message: L(`Added “${title}” to your journey.`, `“${title}” ditambahkan ke journey-mu.`), navigateTo: '/app/journey' };
       }
       case 'BUILD_JOURNEY': {
         const j = await this.journeys.build(userId, str('goalId'));
-        return { message: `Your ${j.title} is ready with ${j.milestones.length} milestones.`, navigateTo: '/app/journey' };
+        return { message: L(`Your ${j.title} is ready with ${j.milestones.length} milestones.`, `${j.title} sudah siap dengan ${j.milestones.length} milestone.`), navigateTo: '/app/journey' };
       }
       case 'SAVE_OPPORTUNITY': {
         const opportunityId = str('opportunityId');
         if (!opportunityId) throw badRequest('Missing opportunity.');
         const app = await this.applications.create(userId, opportunityId);
-        const reminder = app.reminderScheduledAt ? ' A deadline reminder is scheduled.' : '';
-        return { message: `Saved ${app.opportunity.title} to your applications.${reminder}`, navigateTo: `/app/discover/applications/${app.id}` };
+        const reminder = app.reminderScheduledAt ? L(' A deadline reminder is scheduled.', ' Pengingat tenggat sudah dijadwalkan.') : '';
+        return { message: L(`Saved ${app.opportunity.title} to your applications.${reminder}`, `${app.opportunity.title} disimpan ke lamaranmu.${reminder}`), navigateTo: `/app/discover/applications/${app.id}` };
       }
       case 'UPDATE_APPLICATION_STATUS': {
         const applicationId = str('applicationId');
         const status = str('status') as ApplicationStatus | undefined;
         if (!applicationId || !status) throw badRequest('Missing application or status.');
         const app = await this.applications.update(userId, applicationId, { status });
-        return { message: `${app.opportunity.title} moved to ${status.toLowerCase()}.`, navigateTo: `/app/discover/applications/${app.id}` };
+        return { message: L(`${app.opportunity.title} moved to ${status.toLowerCase()}.`, `${app.opportunity.title} dipindahkan ke ${status.toLowerCase()}.`), navigateTo: `/app/discover/applications/${app.id}` };
       }
       case 'CREATE_REMINDER': {
         const title = str('title');
@@ -82,37 +83,37 @@ export class ActionExecutorService {
         await this.notifications.create(userId, {
           type: 'CUSTOM_REMINDER',
           title,
-          message: str('message') ?? 'Reminder from Orbit',
+          message: str('message') ?? L('Reminder from Orbit', 'Pengingat dari Orbit'),
           actionUrl: str('actionUrl') ?? null,
           scheduledAt: new Date(when),
         });
-        return { message: `Reminder set: ${title}.`, navigateTo: null };
+        return { message: L(`Reminder set: ${title}.`, `Pengingat dibuat: ${title}.`), navigateTo: null };
       }
       case 'SET_PRIMARY_GOAL': {
         const goalId = str('goalId');
         if (!goalId) throw badRequest('Missing goal.');
         const goals = await this.goals.setPrimary(userId, goalId);
         const primary = goals.find((g) => g.isPrimary);
-        return { message: `${primary?.role.title ?? 'This role'} is now your primary orbit.`, navigateTo: '/app' };
+        return { message: L(`${primary?.role.title ?? 'This role'} is now your primary orbit.`, `${primary?.role.title ?? 'Peran ini'} kini menjadi orbit utamamu.`), navigateTo: '/app' };
       }
       case 'ADD_CAREER_GOAL': {
         const roleSlug = str('roleSlug');
         if (!roleSlug) throw badRequest('Missing role.');
         await this.goals.add(userId, roleSlug);
-        return { message: 'Added a new orbit to explore.', navigateTo: '/app/journey?view=orbits' };
+        return { message: L('Added a new orbit to explore.', 'Orbit baru ditambahkan untuk dijajaki.'), navigateTo: '/app/journey?view=orbits' };
       }
       case 'UPDATE_QUEST_PROGRESS': {
         const questId = str('questId');
         const taskId = str('taskId');
         if (!questId || !taskId) throw badRequest('Missing quest task.');
         const r = await this.quests.setTask(userId, questId, taskId, payload.completed !== false);
-        return { message: `Progress updated: ${r.quest.title} is ${r.quest.progress}% complete.`, navigateTo: `/app/journey?quest=${questId}` };
+        return { message: L(`Progress updated: ${r.quest.title} is ${r.quest.progress}% complete.`, `Progres diperbarui: ${r.quest.title} sudah ${r.quest.progress}% selesai.`), navigateTo: `/app/journey?quest=${questId}` };
       }
       case 'ADD_GRAPH_NODE': {
         const label = str('label');
         if (!label) throw badRequest('Missing node label.');
         await this.graph.addNode(userId, { type: (str('nodeType') as NodeType) ?? 'SKILL', label, description: str('description') }, 'AGENT');
-        return { message: `Added ${label} to your Career Universe.`, navigateTo: '/app/universe' };
+        return { message: L(`Added ${label} to your Career Universe.`, `${label} ditambahkan ke Career Universe-mu.`), navigateTo: '/app/universe' };
       }
       case 'SAVE_RESOURCE': {
         const kind = str('kind') as SavedKind | undefined;
@@ -120,10 +121,10 @@ export class ActionExecutorService {
         if (!kind || !itemId) throw badRequest('Missing item.');
         const saved = await this.discover.save(userId, kind, itemId);
         await this.sync.afterChange(userId, 'agent_saved_resource');
-        return { message: `Saved “${saved.title}”.`, navigateTo: null };
+        return { message: L(`Saved “${saved.title}”.`, `“${saved.title}” disimpan.`), navigateTo: null };
       }
       case 'NAVIGATE':
-        return { message: 'Opening…', navigateTo: str('url') ?? '/app' };
+        return { message: L('Opening…', 'Membuka…'), navigateTo: str('url') ?? '/app' };
       default:
         throw badRequest('This action type is not supported.');
     }

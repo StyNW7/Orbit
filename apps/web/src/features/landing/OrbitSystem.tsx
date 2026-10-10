@@ -1,8 +1,9 @@
 import { BookOpen, BriefcaseBusiness, CalendarDays, GraduationCap, Lightbulb, Route, Target, Users, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT, type MessageKey } from '@/lib/i18n';
 
 interface OrbitNode {
-  label: string;
+  label: MessageKey;
   icon: LucideIcon;
   angle: number;
   tone: 'green' | 'orange' | 'neutral';
@@ -13,8 +14,8 @@ const RINGS: { size: number; duration: number; reverse?: boolean; nodes: OrbitNo
     size: 46,
     duration: 46,
     nodes: [
-      { label: 'Leadership', icon: Lightbulb, angle: 20, tone: 'green' },
-      { label: 'Product Analytics', icon: Target, angle: 200, tone: 'orange' },
+      { label: 'orbitSystem.leadership', icon: Lightbulb, angle: 20, tone: 'green' },
+      { label: 'orbitSystem.analytics', icon: Target, angle: 200, tone: 'orange' },
     ],
   },
   {
@@ -22,18 +23,18 @@ const RINGS: { size: number; duration: number; reverse?: boolean; nodes: OrbitNo
     duration: 70,
     reverse: true,
     nodes: [
-      { label: 'PM Internship', icon: BriefcaseBusiness, angle: 110, tone: 'orange' },
-      { label: 'Case Study Quest', icon: Route, angle: 290, tone: 'green' },
-      { label: 'Workshop', icon: CalendarDays, angle: 0, tone: 'neutral' },
+      { label: 'orbitSystem.internship', icon: BriefcaseBusiness, angle: 110, tone: 'orange' },
+      { label: 'orbitSystem.caseStudy', icon: Route, angle: 290, tone: 'green' },
+      { label: 'orbitSystem.workshop', icon: CalendarDays, angle: 0, tone: 'neutral' },
     ],
   },
   {
     size: 94,
     duration: 100,
     nodes: [
-      { label: 'Role Model', icon: Users, angle: 60, tone: 'neutral' },
-      { label: 'Inspired', icon: BookOpen, angle: 165, tone: 'neutral' },
-      { label: 'SQL Course', icon: GraduationCap, angle: 250, tone: 'green' },
+      { label: 'orbitSystem.roleModel', icon: Users, angle: 60, tone: 'neutral' },
+      { label: 'orbitSystem.book', icon: BookOpen, angle: 165, tone: 'neutral' },
+      { label: 'orbitSystem.course', icon: GraduationCap, angle: 250, tone: 'green' },
     ],
   },
 ];
@@ -43,6 +44,7 @@ const RINGS: { size: number; duration: number; reverse?: boolean; nodes: OrbitNo
  * opportunities, knowledge and people in orbit. Pure CSS animation.
  */
 export function OrbitSystem({ compact = false, className }: { compact?: boolean; className?: string }) {
+  const { t } = useT();
   return (
     <div className={cn('relative mx-auto aspect-square w-full', className)} aria-hidden>
       <div className="absolute inset-[18%] rounded-full bg-[#0AB46A]/15 blur-3xl" />
@@ -75,7 +77,7 @@ export function OrbitSystem({ compact = false, className }: { compact?: boolean;
                       >
                         <n.icon className="size-3" />
                       </span>
-                      {n.label}
+                      {t(n.label)}
                     </div>
                   </div>
                 </div>
@@ -88,7 +90,7 @@ export function OrbitSystem({ compact = false, className }: { compact?: boolean;
         <div className="relative">
           <div className="absolute inset-0 -m-4 animate-pulse rounded-full bg-[#0AB46A]/25 blur-md" />
           <div className="orbit-gradient relative flex size-16 items-center justify-center rounded-full text-sm font-bold text-white shadow-[0_12px_40px_-8px_rgba(10,180,106,0.9)] sm:size-20 sm:text-base">
-            You
+            {t('orbitSystem.you')}
           </div>
         </div>
       </div>

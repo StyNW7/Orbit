@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ArrowLeft, BrainCircuit, Check, Clock, ExternalLink, MessagesSquare, Mic, NotebookPen, Trash2 } from 'lucide-react';
-import { APPLICATION_PIPELINE, APPLICATION_STATUS_LABELS, type ApplicationDetail, type ApplicationStatus, type InterviewSessionView } from '@orbit/shared';
+import { APPLICATION_PIPELINE, type ApplicationDetail, type ApplicationStatus, type InterviewSessionView } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge, Card, CardEyebrow, Progress, Textarea } from '@/components/ui/primitives';
 import { Checkbox } from '@/components/ui/form-controls';
@@ -11,6 +11,8 @@ import { MatchChip } from '@/components/common/MatchChip';
 import { useApplication, useInterviewMutations, useRemoveApplication, useUpdateApplication } from '@/hooks/queries';
 import { usePageContext, useUiStore } from '@/stores/ui';
 import { cn, daysUntil, friendlyDate } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 export default function ApplicationDetailPage() {
   const { id } = useParams();
@@ -31,6 +33,8 @@ function Detail({ app }: { app: ApplicationDetail }) {
   const update = useUpdateApplication();
   const remove = useRemoveApplication();
   const openAgent = useUiStore((s) => s.openAgent);
+  const { t } = useT();
+  const labels = useLabels();
   const [notes, setNotes] = useState(app.notes ?? '');
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
@@ -41,7 +45,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
     <div className="space-y-5">
       <Button variant="ghost" size="sm" asChild>
         <Link to="/app/discover/applications">
-          <ArrowLeft /> Applications
+          <ArrowLeft /> {t('apps.back')}
         </Link>
       </Button>
 
@@ -49,11 +53,11 @@ function Detail({ app }: { app: ApplicationDetail }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={app.status === 'OFFER' ? 'green' : app.status === 'REJECTED' ? 'danger' : 'orange'}>{APPLICATION_STATUS_LABELS[app.status]}</Badge>
+              <Badge tone={app.status === 'OFFER' ? 'green' : app.status === 'REJECTED' ? 'danger' : 'orange'}>{labels.appStatus(app.status)}</Badge>
               <MatchChip value={app.matchScore} />
               {days !== null && days >= 0 && (
                 <Badge tone={days <= 3 ? 'orange' : 'outline'}>
-                  <Clock /> Deadline {friendlyDate(app.deadline)}
+                  <Clock /> {t('job.deadline', { date: friendlyDate(app.deadline) })}
                 </Badge>
               )}
             </div>
@@ -64,24 +68,24 @@ function Detail({ app }: { app: ApplicationDetail }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" asChild>
-              <Link to={`/app/discover/jobs/${app.opportunity.id}`}>View match</Link>
+              <Link to={`/app/discover/jobs/${app.opportunity.id}`}>{t('common.viewMatch')}</Link>
             </Button>
             {app.opportunity.applyUrl && (
               <Button variant="secondary" asChild>
                 <a href={app.opportunity.applyUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink /> Apply
+                  <ExternalLink /> {t('apps.apply')}
                 </a>
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">More</Button>
+                <Button variant="ghost">{t('apps.more')}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => setPendingStatus('REJECTED')}>Mark as rejected</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setPendingStatus('WITHDRAWN')}>Withdraw application</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setPendingStatus('REJECTED')}>{t('apps.markRejected')}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setPendingStatus('WITHDRAWN')}>{t('apps.withdraw')}</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setConfirmRemove(true)} className="text-danger">
-                  <Trash2 /> Remove from Orbit
+                  <Trash2 /> {t('apps.removeFromOrbit')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -89,7 +93,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
         </div>
 
         {/* Status stepper */}
-        <ol className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Application status">
+        <ol className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label={t('apps.statusLabel')}>
           {APPLICATION_PIPELINE.map((s, i) => {
             const reached = stage >= i && stage !== -1;
             const current = app.status === s;
@@ -106,7 +110,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
                   <span className={cn('flex size-5 items-center justify-center rounded-full text-[10px] font-bold', reached ? 'bg-green text-white' : 'bg-surface-2 text-muted-foreground')}>
                     {reached && !current ? <Check className="size-3" /> : i + 1}
                   </span>
-                  {APPLICATION_STATUS_LABELS[s]}
+                  {labels.appStatus(s)}
                 </button>
               </li>
             );
@@ -118,10 +122,10 @@ function Detail({ app }: { app: ApplicationDetail }) {
         <div className="space-y-5">
           <Card className="p-6">
             <div className="flex items-center justify-between">
-              <CardEyebrow>Preparation</CardEyebrow>
+              <CardEyebrow>{t('apps.preparation')}</CardEyebrow>
               <span className="text-[13px] font-semibold tabular">{app.prepProgress}%</span>
             </div>
-            <Progress value={app.prepProgress} className="mt-2" tone="gradient" label="Preparation progress" />
+            <Progress value={app.prepProgress} className="mt-2" tone="gradient" label={t('apps.prepProgress')} />
             <ul className="mt-4 space-y-1">
               {app.prepChecklist.map((item) => (
                 <li key={item.id}>
@@ -131,13 +135,13 @@ function Detail({ app }: { app: ApplicationDetail }) {
                       onCheckedChange={(v) => update.mutate({ id: app.id, prepChecklist: app.prepChecklist.map((x) => (x.id === item.id ? { ...x, done: Boolean(v) } : x)) })}
                       aria-label={item.label}
                     />
-                    {item.label}
+                    <span className="min-w-0 flex-1">{item.label}</span>
                   </label>
                 </li>
               ))}
             </ul>
             <p className="mt-3 rounded-lg bg-muted-green/50 px-3.5 py-2.5 text-[13.5px]">
-              <span className="font-semibold">Next action · </span>
+              <span className="font-semibold">{t('apps.nextAction')}</span>
               {app.nextAction}
             </p>
           </Card>
@@ -148,30 +152,30 @@ function Detail({ app }: { app: ApplicationDetail }) {
         <div className="space-y-5">
           <Card className="p-6">
             <CardEyebrow className="flex items-center gap-1.5">
-              <NotebookPen className="size-3.5" /> Notes
+              <NotebookPen className="size-3.5" /> {t('apps.notes')}
             </CardEyebrow>
-            <Textarea className="mt-3" rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Recruiter names, questions asked, follow-up dates…" />
+            <Textarea className="mt-3" rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('apps.notesPlaceholder')} maxLength={5000} />
             <Button size="sm" className="mt-2" variant="secondary" disabled={notes === (app.notes ?? '')} loading={update.isPending} onClick={() => update.mutate({ id: app.id, notes })}>
-              Save notes
+              {t('apps.saveNotes')}
             </Button>
           </Card>
           <Card className="p-6">
-            <CardEyebrow>Match snapshot</CardEyebrow>
+            <CardEyebrow>{t('apps.snapshot')}</CardEyebrow>
             <p className="mt-2 text-[13.5px]">
-              <span className="font-semibold">Strengths: </span>
+              <span className="font-semibold">{t('apps.strengths')}</span>
               <span className="text-muted-foreground">{app.match.reasons.join(', ') || '—'}</span>
             </p>
             <p className="mt-1 text-[13.5px]">
-              <span className="font-semibold">Gaps: </span>
-              <span className="text-muted-foreground">{app.match.missingSkills.map((m) => m.name).join(', ') || 'None critical'}</span>
+              <span className="font-semibold">{t('apps.gaps')}</span>
+              <span className="text-muted-foreground">{app.match.missingSkills.map((m) => m.name).join(', ') || t('apps.noneCritical')}</span>
             </p>
-            <Button size="sm" variant="ghost" className="mt-3" onClick={() => openAgent('Am I ready to apply for this role?')}>
-              <BrainCircuit /> Ask Orbit
+            <Button size="sm" variant="ghost" className="mt-3" onClick={() => openAgent(t('agent.prompt.readyApply'))}>
+              <BrainCircuit /> {t('common.askOrbit')}
             </Button>
           </Card>
           {app.relatedNotes.length > 0 && (
             <Card className="p-6">
-              <CardEyebrow>Related journal notes</CardEyebrow>
+              <CardEyebrow>{t('apps.relatedNotes')}</CardEyebrow>
               <ul className="mt-3 space-y-3">
                 {app.relatedNotes.map((n) => (
                   <li key={n.id} className="text-[13.5px]">
@@ -186,25 +190,25 @@ function Detail({ app }: { app: ApplicationDetail }) {
       </div>
 
       <Dialog open={Boolean(pendingStatus)} onOpenChange={(o) => !o && setPendingStatus(null)}>
-        <DialogContent title={`Move to ${pendingStatus ? APPLICATION_STATUS_LABELS[pendingStatus] : ''}?`} description="Status changes update your readiness, timeline and reminders.">
+        <DialogContent title={t('apps.moveTo', { status: pendingStatus ? labels.appStatus(pendingStatus) : '' })} description={t('apps.moveDesc')}>
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setPendingStatus(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button loading={update.isPending} onClick={() => pendingStatus && update.mutate({ id: app.id, status: pendingStatus }, { onSuccess: () => setPendingStatus(null) })}>
-              Confirm
+              {t('common.confirm')}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={confirmRemove} onOpenChange={setConfirmRemove}>
-        <DialogContent title="Remove this application?" description="Orbit will stop tracking it and cancel its scheduled reminder.">
+        <DialogContent title={t('apps.removeTitle')} description={t('apps.removeDesc')}>
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmRemove(false)}>
-              Keep
+              {t('common.keep')}
             </Button>
             <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(app.id, { onSuccess: () => navigate('/app/discover/applications') })}>
-              Remove
+              {t('common.remove')}
             </Button>
           </div>
         </DialogContent>
@@ -217,18 +221,19 @@ function InterviewPractice({ app }: { app: ApplicationDetail }) {
   const { start, answer, complete } = useInterviewMutations(app.id);
   const active = app.interviews.find((s) => s.status === 'IN_PROGRESS');
   const past = app.interviews.filter((s) => s.status === 'COMPLETED');
+  const { t } = useT();
   return (
     <Card id="practice" className="p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <CardEyebrow className="flex items-center gap-1.5">
-            <Mic className="size-3.5" /> Interview practice
+            <Mic className="size-3.5" /> {t('apps.practice')}
           </CardEyebrow>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">Questions generated from this job, your CV, your gaps and past reflections.</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">{t('apps.practiceDesc')}</p>
         </div>
         {!active && (
           <Button onClick={() => start.mutate()} loading={start.isPending}>
-            <MessagesSquare /> Start practice
+            <MessagesSquare /> {t('apps.startPractice')}
           </Button>
         )}
       </div>
@@ -255,11 +260,12 @@ function ActiveSession({
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const answered = session.questions.filter((q) => q.answer).length;
+  const { t } = useT();
   return (
     <div className="mt-5 space-y-3">
       <div className="flex items-center justify-between text-[12.5px] text-muted-foreground">
         <span>
-          {answered}/{session.questions.length} answered · {session.generatedBy === 'AI' ? 'AI-generated questions' : 'Orbit question bank'}
+          {t('apps.answered', { done: answered, total: session.questions.length, source: session.generatedBy === 'AI' ? t('apps.aiQuestions') : t('apps.bankQuestions') })}
         </span>
       </div>
       {session.questions.map((q, i) => (
@@ -280,9 +286,9 @@ function ActiveSession({
                 </>
               ) : (
                 <>
-                  <Textarea className="mt-2" rows={4} value={drafts[q.id] ?? ''} onChange={(e) => setDrafts((d) => ({ ...d, [q.id]: e.target.value }))} placeholder="Answer as you would in the interview. Use Situation, Task, Action, Result." aria-label={`Answer to question ${i + 1}`} />
+                  <Textarea className="mt-2" rows={4} value={drafts[q.id] ?? ''} onChange={(e) => setDrafts((d) => ({ ...d, [q.id]: e.target.value }))} placeholder={t('apps.answerPlaceholder')} aria-label={t('apps.answerLabel', { n: i + 1 })} maxLength={4000} />
                   <Button size="sm" className="mt-2" disabled={(drafts[q.id] ?? '').trim().length < 5} loading={answering === q.id} onClick={() => onAnswer(q.id, drafts[q.id])}>
-                    Get feedback
+                    {t('apps.getFeedback')}
                   </Button>
                 </>
               )}
@@ -291,7 +297,7 @@ function ActiveSession({
         </div>
       ))}
       <Button variant="gradient" onClick={onFinish} loading={finishing} disabled={answered === 0}>
-        Finish session & see coaching indicators
+        {t('apps.finish')}
       </Button>
     </div>
   );
@@ -299,19 +305,20 @@ function ActiveSession({
 
 function PastSession({ session }: { session: InterviewSessionView }) {
   const s = session.scores;
+  const { t } = useT();
   return (
     <div className="mt-5 rounded-xl border border-border p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[14px] font-semibold">Practice · {friendlyDate(session.completedAt)}</p>
-        <Badge tone="outline">Coaching indicators</Badge>
+        <p className="text-[14px] font-semibold">{t('apps.practiceOn', { date: friendlyDate(session.completedAt) })}</p>
+        <Badge tone="outline">{t('apps.coaching')}</Badge>
       </div>
       {s && (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <ScoreBar label="Communication" value={s.communication} />
-          <ScoreBar label="Structure" value={s.structure} />
-          <ScoreBar label="Role knowledge" value={s.roleKnowledge} tone={s.roleKnowledge < 55 ? 'orange' : 'green'} />
-          <ScoreBar label="Examples" value={s.examples} tone={s.examples < 55 ? 'orange' : 'green'} />
-          <ScoreBar label="Confidence" value={s.confidence} />
+          <ScoreBar label={t('apps.score.communication')} value={s.communication} />
+          <ScoreBar label={t('apps.score.structure')} value={s.structure} />
+          <ScoreBar label={t('apps.score.roleKnowledge')} value={s.roleKnowledge} tone={s.roleKnowledge < 55 ? 'orange' : 'green'} />
+          <ScoreBar label={t('apps.score.examples')} value={s.examples} tone={s.examples < 55 ? 'orange' : 'green'} />
+          <ScoreBar label={t('apps.score.confidence')} value={s.confidence} />
         </div>
       )}
       {session.summary && <p className="mt-3 text-[13px] text-muted-foreground">{session.summary}</p>}

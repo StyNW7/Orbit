@@ -5,6 +5,7 @@ import type { NodeHoverDrawingFunction, NodeLabelDrawingFunction } from 'sigma/r
 import type { GraphNodeView, NodeType, UniverseGraph as UniverseData } from '@orbit/shared';
 import { UNIVERSE_FILTERS, type UniverseFilterId } from '@orbit/shared';
 import { nodeColor } from '@/lib/icons';
+import { useT } from '@/lib/i18n';
 
 export interface UniverseGraphHandle {
   zoomIn: () => void;
@@ -165,6 +166,7 @@ export const UniverseGraph = forwardRef<UniverseGraphHandle, Props>(function Uni
     dragging: null,
   });
   const enteredRef = useRef(false);
+  const { t } = useT();
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
@@ -375,5 +377,5 @@ export const UniverseGraph = forwardRef<UniverseGraphHandle, Props>(function Uni
     },
   }));
 
-  return <div ref={containerRef} className="absolute inset-0" role="img" aria-label="Career Universe graph. Use the search box or the list in the details panel to explore nodes with a keyboard." />;
+  return <div ref={containerRef} className="absolute inset-0" role="img" aria-label={t('universe.graphLabel')} />;
 });

@@ -1,20 +1,22 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router';
+import { createBrowserRouter, Link, Navigate, Outlet, RouterProvider, useLocation } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { Compass } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/overlays';
-import { AppShell } from '@/components/layout/AppShell';
 import { EmptyState, ErrorState, LoadingState } from '@/components/common/states';
 import { Button } from '@/components/ui/button';
 import { queryClient, useMe } from '@/hooks/queries';
 import { useSessionStore } from '@/stores/session';
 import { useIsDark } from '@/stores/ui';
+import { useT } from '@/lib/i18n';
 
 const LandingPage = lazy(() => import('@/features/landing/LandingPage'));
 const SignInPage = lazy(() => import('@/features/auth/AuthPages').then((m) => ({ default: m.SignInPage })));
 const SignUpPage = lazy(() => import('@/features/auth/AuthPages').then((m) => ({ default: m.SignUpPage })));
 const OnboardingPage = lazy(() => import('@/features/onboarding/OnboardingPage'));
+// The signed-in shell (agent drawer, command palette, markdown) stays out of the landing bundle.
+const AppShell = lazy(() => import('@/components/layout/AppShell').then((m) => ({ default: m.AppShell })));
 const MissionControlPage = lazy(() => import('@/features/mission/MissionControlPage'));
 const UniversePage = lazy(() => import('@/features/universe/UniversePage'));
 const JourneyPage = lazy(() => import('@/features/journey/JourneyPage'));
@@ -25,11 +27,13 @@ const ApplicationDetailPage = lazy(() => import('@/features/discover/Application
 const ProgressPage = lazy(() => import('@/features/progress/ProgressPage'));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
+const GuidePage = lazy(() => import('@/features/guide/GuidePage'));
 
-function FullScreenLoader({ label = 'Loading Orbit…' }: { label?: string }) {
+function FullScreenLoader({ label }: { label?: string }) {
+  const { t } = useT();
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background">
-      <LoadingState label={label} />
+      <LoadingState label={label ?? t('app.loading')} />
     </div>
   );
 }
@@ -42,12 +46,13 @@ function Page({ children }: { children: ReactNode }) {
 function RequireAuth({ onboarding }: { onboarding: 'required' | 'pending' }) {
   const token = useSessionStore((s) => s.token);
   const location = useLocation();
+  const { t } = useT();
   const { data: me, isLoading, error, refetch } = useMe(Boolean(token));
   if (!token) return <Navigate to={`/signin?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
-  if (isLoading) return <FullScreenLoader label="Loading your Orbit…" />;
+  if (isLoading) return <FullScreenLoader label={t('app.loadingYour')} />;
   if (error || !me) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <ErrorState error={error} onRetry={() => void refetch()} />
       </div>
     );
@@ -62,15 +67,16 @@ function RedirectIfAuthed({ children }: { children: ReactNode }) {
 }
 
 function NotFound() {
+  const { t } = useT();
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background">
       <EmptyState
         icon={Compass}
-        title="This page drifted out of orbit"
-        description="The page you are looking for does not exist or has moved."
+        title={t('app.notFoundTitle')}
+        description={t('app.notFoundDesc')}
         action={
           <Button asChild>
-            <a href="/app">Back to Mission Control</a>
+            <Link to="/app">{t('app.backToMission')}</Link>
           </Button>
         }
       />
@@ -91,7 +97,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/app',
-        element: <AppShell />,
+        element: <Page><AppShell /></Page>,
         children: [
           { index: true, element: <MissionControlPage /> },
           { path: 'universe', element: <UniversePage /> },
@@ -103,6 +109,7 @@ const router = createBrowserRouter([
           { path: 'progress', element: <ProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'settings', element: <SettingsPage /> },
+          { path: 'guide', element: <GuidePage /> },
         ],
       },
     ],

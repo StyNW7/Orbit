@@ -54,6 +54,7 @@ import type {
   WorkMode,
 } from '@orbit/shared';
 import { api, errorMessage } from '@/lib/api';
+import { onLocaleChange, translate as tr } from '@/lib/i18n';
 import { round1 } from '@/lib/utils';
 
 export const queryClient = new QueryClient({
@@ -66,6 +67,9 @@ export const queryClient = new QueryClient({
     mutations: { retry: 0 },
   },
 });
+
+// Server-generated guidance (next best action, match reasons, agent copy) follows the active language.
+onLocaleChange(() => void queryClient.invalidateQueries());
 
 const qs = (params: Record<string, string | undefined>) => {
   const p = Object.entries(params).filter(([, v]) => v !== undefined && v !== '');
@@ -82,7 +86,7 @@ export function invalidateCareer(qc = queryClient) {
 function readinessToast(before: number | null | undefined, after: number | null | undefined, extra?: string) {
   if (after == null) return;
   const delta = before == null ? null : round1(after - before);
-  if (delta && delta > 0) toast.success(`Career Readiness +${delta}`, { description: extra ?? `Now ${round1(after)}% — Orbit recalculated your readiness.` });
+  if (delta && delta > 0) toast.success(tr('toast.readinessUp', { delta }), { description: extra ?? tr('toast.readinessNow', { score: round1(after) }) });
   else if (extra) toast.success(extra);
 }
 
@@ -98,14 +102,14 @@ export const useSkillsCatalog = () => useQuery({ queryKey: ['skills-catalog'], q
 export function useUploadCv() {
   return useMutation({
     mutationFn: (file: File) => api.upload<CvUploadResult>('/files/cv', file),
-    onError: (e) => toast.error('CV upload failed', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.cvFailed'), { description: errorMessage(e) }),
   });
 }
 
 export function useUploadFile() {
   return useMutation({
     mutationFn: ({ file, purpose }: { file: File; purpose: 'EVIDENCE' | 'CERTIFICATE' }) => api.upload<StoredFileView>(`/files?purpose=${purpose}`, file),
-    onError: (e) => toast.error('Upload failed', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.uploadFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -124,39 +128,39 @@ export function useUpdateProfile() {
     onSuccess: (data) => {
       qc.setQueryData(['profile'], data);
       invalidateCareer(qc);
-      toast.success('Profile updated');
+      toast.success(tr('toast.profileUpdated'));
     },
-    onError: (e) => toast.error('Could not update profile', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.profileFailed'), { description: errorMessage(e) }),
   });
 }
 
 export function useExperienceMutations() {
   const qc = useQueryClient();
-  const done = (msg: string) => () => {
+  const done = (key: Parameters<typeof tr>[0]) => () => {
     invalidateCareer(qc);
-    toast.success(msg);
+    toast.success(tr(key));
   };
-  const fail = (e: unknown) => toast.error('Something went wrong', { description: errorMessage(e) });
+  const fail = (e: unknown) => toast.error(tr('toast.somethingWrong'), { description: errorMessage(e) });
   return {
     add: useMutation({
       mutationFn: (data: { type: ExperienceType; title: string; organization: string; description?: string; startDate?: string; endDate?: string; current?: boolean }) =>
         api.post('/experiences', data),
-      onSuccess: done('Experience added — your Universe and readiness were updated'),
+      onSuccess: done('toast.expAdded'),
       onError: fail,
     }),
-    remove: useMutation({ mutationFn: (id: string) => api.del(`/experiences/${id}`), onSuccess: done('Experience removed'), onError: fail }),
+    remove: useMutation({ mutationFn: (id: string) => api.del(`/experiences/${id}`), onSuccess: done('toast.expRemoved'), onError: fail }),
     upsertSkill: useMutation({
       mutationFn: (data: { skillSlug: string; level: number }) => api.post<UserSkillView[]>('/skills', data),
-      onSuccess: done('Skill saved'),
+      onSuccess: done('toast.skillSaved'),
       onError: fail,
     }),
-    removeSkill: useMutation({ mutationFn: (id: string) => api.del(`/skills/${id}`), onSuccess: done('Skill removed'), onError: fail }),
+    removeSkill: useMutation({ mutationFn: (id: string) => api.del(`/skills/${id}`), onSuccess: done('toast.skillRemoved'), onError: fail }),
     addAchievement: useMutation({
       mutationFn: (data: { type: 'AWARD' | 'CERTIFICATION' | 'PUBLICATION'; title: string; issuer?: string; date?: string }) => api.post('/achievements', data),
-      onSuccess: done('Achievement added'),
+      onSuccess: done('toast.achAdded'),
       onError: fail,
     }),
-    removeAchievement: useMutation({ mutationFn: (id: string) => api.del(`/achievements/${id}`), onSuccess: done('Achievement removed'), onError: fail }),
+    removeAchievement: useMutation({ mutationFn: (id: string) => api.del(`/achievements/${id}`), onSuccess: done('toast.achRemoved'), onError: fail }),
   };
 }
 
@@ -168,13 +172,13 @@ export const useGoalComparison = (enabled = true) => useQuery({ queryKey: ['goal
 
 export function useGoalMutations() {
   const qc = useQueryClient();
-  const fail = (e: unknown) => toast.error('Could not update your orbits', { description: errorMessage(e) });
+  const fail = (e: unknown) => toast.error(tr('toast.orbitsFailed'), { description: errorMessage(e) });
   return {
     add: useMutation({
       mutationFn: (roleSlug: string) => api.post<CareerGoalView[]>('/goals', { roleSlug }),
       onSuccess: () => {
         invalidateCareer(qc);
-        toast.success('New orbit added', { description: 'Compare it with your primary path anytime.' });
+        toast.success(tr('toast.orbitAdded'), { description: tr('toast.orbitAddedDesc') });
       },
       onError: fail,
     }),
@@ -182,7 +186,7 @@ export function useGoalMutations() {
       mutationFn: (goalId: string) => api.post<CareerGoalView[]>(`/goals/${goalId}/primary`),
       onSuccess: (goals) => {
         invalidateCareer(qc);
-        toast.success(`${goals.find((g) => g.isPrimary)?.role.title ?? 'Goal'} is now your primary orbit`);
+        toast.success(tr('toast.primaryNow', { role: goals.find((g) => g.isPrimary)?.role.title ?? tr('toast.goal') }));
       },
       onError: fail,
     }),
@@ -190,7 +194,7 @@ export function useGoalMutations() {
       mutationFn: (goalId: string) => api.del<CareerGoalView[]>(`/goals/${goalId}`),
       onSuccess: () => {
         invalidateCareer(qc);
-        toast.success('Orbit archived');
+        toast.success(tr('toast.orbitArchived'));
       },
       onError: fail,
     }),
@@ -213,7 +217,7 @@ export function useInsightMutations() {
         invalidateCareer(qc);
         toast.success(r.message);
       },
-      onError: (e) => toast.error('Could not apply this suggestion', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.insightFailed'), { description: errorMessage(e) }),
     }),
     dismiss: useMutation({
       mutationFn: (id: string) => api.post(`/insights/${id}/dismiss`),
@@ -235,9 +239,9 @@ export function useRebuildUniverse() {
     mutationFn: () => api.post<UniverseGraph>('/universe/rebuild'),
     onSuccess: (graph) => {
       qc.setQueryData(['universe'], graph);
-      toast.success('Career Universe refreshed', { description: `${graph.nodes.length} nodes · ${graph.edges.length} connections` });
+      toast.success(tr('toast.universeRefreshed'), { description: tr('toast.universeStats', { nodes: graph.nodes.length, edges: graph.edges.length }) });
     },
-    onError: (e) => toast.error('Could not refresh your Universe', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.universeFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -247,9 +251,9 @@ export function useAddUniverseNode() {
     mutationFn: (data: { type: string; label: string; description?: string }) => api.post('/universe/nodes', data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['universe'] });
-      toast.success('Added to your Career Universe');
+      toast.success(tr('toast.nodeAdded'));
     },
-    onError: (e) => toast.error('Could not add node', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.nodeFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -265,9 +269,9 @@ export function useBuildJourney() {
     mutationFn: (goalId?: string) => api.post<JourneyDetail>('/journeys', goalId ? { goalId } : {}),
     onSuccess: (j) => {
       invalidateCareer(qc);
-      toast.success(`${j.title} is ready`, { description: `${j.milestones.length} milestones · ${j.milestones.reduce((s, m) => s + m.quests.length, 0)} quests` });
+      toast.success(tr('toast.journeyReady', { title: j.title }), { description: tr('toast.journeyStats', { milestones: j.milestones.length, quests: j.milestones.reduce((s, m) => s + m.quests.length, 0) }) });
     },
-    onError: (e) => toast.error('Could not build your journey', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.journeyFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -277,10 +281,10 @@ export function useAddSkillToJourney() {
     mutationFn: (skillSlug: string) => api.post<AddSkillToJourneyResult>('/journeys/skills', { skillSlug }),
     onSuccess: (r) => {
       invalidateCareer(qc);
-      if (r.created) toast.success('Added to your Journey', { description: r.message });
+      if (r.created) toast.success(tr('toast.addedJourney'), { description: r.message });
       else toast(r.message);
     },
-    onError: (e) => toast.error('Could not add to journey', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.addJourneyFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -290,9 +294,9 @@ export function useAddCustomQuest() {
     mutationFn: (data: { title: string; description: string; tasks: string[]; skillSlug?: string; category?: string }) => api.post<JourneyDetail>('/journeys/quests', data),
     onSuccess: () => {
       invalidateCareer(qc);
-      toast.success('Quest added to your journey');
+      toast.success(tr('toast.questAdded'));
     },
-    onError: (e) => toast.error('Could not add quest', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.questAddFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -321,13 +325,13 @@ export function useQuestTask() {
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(['journey', 'primary'], ctx.prev);
-      toast.error('Could not update the task', { description: errorMessage(e) });
+      toast.error(tr('toast.taskFailed'), { description: errorMessage(e) });
     },
     onSuccess: (r, v) => {
       invalidateCareer(qc);
       if (v.completed) {
-        readinessToast(r.readiness?.previousScore, r.readiness?.score, `+${r.xpGained} XP · ${r.quest.title} ${r.quest.progress}%`);
-        if (r.leveledUp) toast.success(`Orbit Level ${r.level.level} reached`);
+        readinessToast(r.readiness?.previousScore, r.readiness?.score, tr('toast.taskProgress', { xp: r.xpGained, title: r.quest.title, progress: r.quest.progress }));
+        if (r.leveledUp) toast.success(tr('toast.levelUp', { level: r.level.level }));
       }
     },
   });
@@ -340,10 +344,10 @@ export function useCompleteQuest() {
       api.post<QuestProgressResult>(`/quests/${questId}/complete`, { completeRemainingTasks: completeRemainingTasks ?? false }),
     onSuccess: (r) => {
       invalidateCareer(qc);
-      toast.success(`Quest completed · +${r.xpGained} XP`, { description: r.milestoneCompleted ? 'Milestone reached — nice momentum.' : r.quest.title });
+      toast.success(tr('toast.questDone', { xp: r.xpGained }), { description: r.milestoneCompleted ? tr('toast.milestoneDone') : r.quest.title });
       readinessToast(r.readiness?.previousScore, r.readiness?.score);
     },
-    onError: (e) => toast.error('Could not complete the quest', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.questFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -354,9 +358,9 @@ export function useSubmitEvidence() {
       api.post<QuestView>(`/quests/${questId}/evidence`, body),
     onSuccess: (q) => {
       invalidateCareer(qc);
-      toast.success('Evidence saved', { description: q.evidence[0]?.aiReview ? 'Orbit reviewed it — see the note on the quest.' : 'You can complete the quest when you are ready.' });
+      toast.success(tr('toast.evidenceSaved'), { description: q.evidence[0]?.aiReview ? tr('toast.evidenceReviewed') : tr('toast.evidenceReady') });
     },
-    onError: (e) => toast.error('Could not save evidence', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.evidenceFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -366,8 +370,9 @@ export function useUpdateQuest() {
     mutationFn: ({ questId, deadline }: { questId: string; deadline: string | null }) => api.patch<QuestView>(`/quests/${questId}`, { deadline }),
     onSuccess: () => {
       invalidateCareer(qc);
-      toast.success('Quest deadline updated');
+      toast.success(tr('toast.deadlineUpdated'));
     },
+    onError: (e) => toast.error(tr('toast.updateFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -391,9 +396,9 @@ export function useSaveItem() {
     mutationFn: (data: { kind: SavedKind; itemId: string }) => api.post<SavedItemView>('/discover/saved', data),
     onSuccess: (s) => {
       invalidateCareer(qc);
-      toast.success('Saved', { description: `“${s.title}” is now connected to your Orbit.` });
+      toast.success(tr('toast.saved'), { description: tr('toast.savedDesc', { title: s.title }) });
     },
-    onError: (e) => toast.error('Could not save', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.saveFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -403,9 +408,9 @@ export function useUpdateSaved() {
     mutationFn: ({ id, status }: { id: string; status: SavedStatus }) => api.patch<SavedItemView>(`/discover/saved/${id}`, { status }),
     onSuccess: (s) => {
       invalidateCareer(qc);
-      toast.success(s.status === 'COMPLETED' ? `Completed “${s.title}” · +40 XP` : 'Updated');
+      toast.success(s.status === 'COMPLETED' ? tr('toast.completedItem', { title: s.title }) : tr('toast.updated'));
     },
-    onError: (e) => toast.error('Could not update', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.updateFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -425,9 +430,9 @@ export function useRefreshJobs() {
       invalidateCareer(qc);
       const imported = r.reduce((s, x) => s + x.imported, 0);
       const failed = r.filter((x) => x.status === 'failed').map((x) => x.provider);
-      toast.success(`Opportunities refreshed · ${imported} new`, { description: failed.length ? `Unavailable right now: ${failed.join(', ')}` : 'All providers responded.' });
+      toast.success(tr('toast.refreshed', { count: imported }), { description: failed.length ? tr('toast.unavailable', { list: failed.join(', ') }) : tr('toast.allResponded') });
     },
-    onError: (e) => toast.error('Refresh failed', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.refreshFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -444,11 +449,11 @@ export function useSaveJob() {
     mutationFn: (opportunityId: string) => api.post<ApplicationView & { reminderScheduledAt: string | null }>('/applications', { opportunityId }),
     onSuccess: (a) => {
       invalidateCareer(qc);
-      toast.success(`Saved ${a.opportunity.title}`, {
-        description: a.reminderScheduledAt ? 'Deadline detected — Orbit scheduled a reminder for you.' : 'Track it in your applications.',
+      toast.success(tr('toast.savedJob', { title: a.opportunity.title }), {
+        description: a.reminderScheduledAt ? tr('toast.deadlineDetected') : tr('toast.trackIt'),
       });
     },
-    onError: (e) => toast.error('Could not save this job', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.saveJobFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -458,7 +463,7 @@ export function useUpdateApplication() {
     mutationFn: ({ id, ...data }: { id: string; status?: ApplicationStatus; notes?: string | null; deadline?: string | null; prepChecklist?: PrepChecklistItem[] }) =>
       api.patch<ApplicationView>(`/applications/${id}`, data),
     onSuccess: () => invalidateCareer(qc),
-    onError: (e) => toast.error('Could not update the application', { description: errorMessage(e) }),
+    onError: (e) => toast.error(tr('toast.appFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -468,8 +473,9 @@ export function useRemoveApplication() {
     mutationFn: (id: string) => api.del(`/applications/${id}`),
     onSuccess: () => {
       invalidateCareer(qc);
-      toast.success('Application removed');
+      toast.success(tr('toast.appRemoved'));
     },
+    onError: (e) => toast.error(tr('toast.appFailed'), { description: errorMessage(e) }),
   });
 }
 
@@ -480,21 +486,21 @@ export function useInterviewMutations(applicationId?: string) {
     start: useMutation({
       mutationFn: () => api.post<InterviewSessionView>('/interviews', applicationId ? { applicationId } : {}),
       onSuccess: refresh,
-      onError: (e) => toast.error('Could not start practice', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.practiceFailed'), { description: errorMessage(e) }),
     }),
     answer: useMutation({
       mutationFn: ({ sessionId, questionId, answer }: { sessionId: string; questionId: string; answer: string }) =>
         api.post<InterviewSessionView>(`/interviews/${sessionId}/answers`, { questionId, answer }),
       onSuccess: refresh,
-      onError: (e) => toast.error('Could not save your answer', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.answerFailed'), { description: errorMessage(e) }),
     }),
     complete: useMutation({
       mutationFn: (sessionId: string) => api.post<InterviewSessionView>(`/interviews/${sessionId}/complete`),
       onSuccess: () => {
         invalidateCareer(qc);
-        toast.success('Practice complete · +100 XP', { description: 'Your coaching indicators and insights were updated.' });
+        toast.success(tr('toast.practiceDone'), { description: tr('toast.practiceDoneDesc') });
       },
-      onError: (e) => toast.error('Could not finish the session', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.finishFailed'), { description: errorMessage(e) }),
     }),
   };
 }
@@ -511,24 +517,26 @@ export function useNoteMutations() {
     void qc.invalidateQueries({ queryKey: ['notes'] });
     void qc.invalidateQueries({ queryKey: ['insights'] });
     void qc.invalidateQueries({ queryKey: ['mission'] });
-    toast.success(msg, { description: r.patterns.length ? 'Orbit noticed a recurring pattern in your notes.' : undefined });
+    toast.success(msg, { description: r.patterns.length ? tr('toast.patternFound') : undefined });
   };
   return {
     create: useMutation({
       mutationFn: (data: { type: NoteType; title: string; content: string; tags?: string[] }) => api.post<{ note: NoteView; patterns: InsightView[] }>('/notes', data),
-      onSuccess: (r) => after(r, 'Note saved · +5 XP'),
-      onError: (e) => toast.error('Could not save note', { description: errorMessage(e) }),
+      onSuccess: (r) => after(r, tr('toast.noteSaved')),
+      onError: (e) => toast.error(tr('toast.noteFailed'), { description: errorMessage(e) }),
     }),
     update: useMutation({
       mutationFn: ({ id, ...data }: { id: string; type?: NoteType; title?: string; content?: string }) => api.patch<{ note: NoteView; patterns: InsightView[] }>(`/notes/${id}`, data),
-      onSuccess: (r) => after(r, 'Note updated'),
+      onSuccess: (r) => after(r, tr('toast.noteUpdated')),
+      onError: (e) => toast.error(tr('toast.noteFailed'), { description: errorMessage(e) }),
     }),
     remove: useMutation({
       mutationFn: (id: string) => api.del(`/notes/${id}`),
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: ['notes'] });
-        toast.success('Note deleted');
+        toast.success(tr('toast.noteDeleted'));
       },
+      onError: (e) => toast.error(tr('toast.somethingWrong'), { description: errorMessage(e) }),
     }),
   };
 }
@@ -548,9 +556,9 @@ export function useNotificationMutations() {
       onSuccess: (n) => {
         refresh();
         void qc.invalidateQueries({ queryKey: ['mission'] });
-        toast.success('Reminder scheduled', { description: n.title });
+        toast.success(tr('toast.reminderSet'), { description: n.title });
       },
-      onError: (e) => toast.error('Could not create reminder', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.reminderFailed'), { description: errorMessage(e) }),
     }),
   };
 }
@@ -578,7 +586,7 @@ export function useAgentAction() {
         invalidateCareer(qc);
         toast.success(r.message);
       },
-      onError: (e) => toast.error('Action failed', { description: errorMessage(e) }),
+      onError: (e) => toast.error(tr('toast.actionFailed'), { description: errorMessage(e) }),
     }),
     reject: useMutation({ mutationFn: (id: string) => api.post(`/agent/actions/${id}/reject`) }),
   };

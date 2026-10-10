@@ -19,6 +19,7 @@ import {
 import type { SearchResult } from '@orbit/shared';
 import { useSearch } from '@/hooks/queries';
 import { useUiStore } from '@/stores/ui';
+import { useT, type MessageKey } from '@/lib/i18n';
 
 const ICONS: Record<SearchResult['type'], LucideIcon> = {
   PAGE: LayoutGrid,
@@ -33,15 +34,15 @@ const ICONS: Record<SearchResult['type'], LucideIcon> = {
   NOTE: FileText,
 };
 
-const GROUPS: { type: SearchResult['type'][]; label: string }[] = [
-  { type: ['PAGE'], label: 'Go to' },
-  { type: ['NODE'], label: 'Career Universe' },
-  { type: ['QUEST'], label: 'Journey' },
-  { type: ['JOB'], label: 'Opportunities' },
-  { type: ['EVENT', 'RESOURCE'], label: 'Growth' },
-  { type: ['BOOK', 'PAPER'], label: 'Knowledge' },
-  { type: ['PERSON'], label: 'People' },
-  { type: ['NOTE'], label: 'Journal' },
+const GROUPS: { type: SearchResult['type'][]; label: MessageKey }[] = [
+  { type: ['PAGE'], label: 'cmd.group.PAGE' },
+  { type: ['NODE'], label: 'cmd.group.NODE' },
+  { type: ['QUEST'], label: 'cmd.group.QUEST' },
+  { type: ['JOB'], label: 'cmd.group.JOB' },
+  { type: ['EVENT', 'RESOURCE'], label: 'cmd.group.GROWTH' },
+  { type: ['BOOK', 'PAPER'], label: 'cmd.group.KNOWLEDGE' },
+  { type: ['PERSON'], label: 'cmd.group.PERSON' },
+  { type: ['NOTE'], label: 'cmd.group.NOTE' },
 ];
 
 export function CommandPalette() {
@@ -49,6 +50,7 @@ export function CommandPalette() {
   const setOpen = useUiStore((s) => s.setCommandOpen);
   const openAgent = useUiStore((s) => s.openAgent);
   const navigate = useNavigate();
+  const { t } = useT();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   useEffect(() => {
@@ -70,23 +72,23 @@ export function CommandPalette() {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/40 backdrop-blur-[2px] dark:bg-black/60" />
         <DialogPrimitive.Content className="fixed left-1/2 top-[12vh] z-50 w-[calc(100%-2rem)] max-w-[620px] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface shadow-pop focus:outline-none">
-          <DialogPrimitive.Title className="sr-only">Search Orbit</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">Search pages, skills, opportunities, quests and people</DialogPrimitive.Description>
-          <Command shouldFilter={false} label="Search Orbit">
+          <DialogPrimitive.Title className="sr-only">{t('cmd.title')}</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">{t('cmd.desc')}</DialogPrimitive.Description>
+          <Command shouldFilter={false} label={t('cmd.title')}>
             <div className="flex items-center gap-3 border-b border-border px-4">
               <Search className="size-[18px] text-muted-foreground" />
               <Command.Input
                 value={query}
                 onValueChange={setQuery}
-                placeholder="Search your Orbit…"
+                placeholder={t('cmd.placeholder')}
                 className="h-14 flex-1 bg-transparent text-[15px] outline-none placeholder:text-subtle-foreground"
               />
-              {isFetching && <span className="text-xs text-subtle-foreground">Searching…</span>}
+              {isFetching && <span className="text-xs text-subtle-foreground">{t('cmd.searching')}</span>}
             </div>
             <Command.List className="max-h-[min(60vh,440px)] overflow-y-auto p-2 scrollbar-thin">
-              <Command.Empty className="px-4 py-10 text-center text-sm text-muted-foreground">No matches. Try a skill, company or quest name.</Command.Empty>
+              <Command.Empty className="px-4 py-10 text-center text-sm text-muted-foreground">{query.trim().length < 2 ? t('cmd.hint') : t('cmd.empty')}</Command.Empty>
               {query.trim().length >= 2 && (
-                <Command.Group heading="Orbit Agent" className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5">
+                <Command.Group heading={t('agent.title')} className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5">
                   <Command.Item
                     value={`ask-${query}`}
                     onSelect={() => {
@@ -96,7 +98,7 @@ export function CommandPalette() {
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm normal-case tracking-normal text-foreground data-[selected=true]:bg-surface-2"
                   >
                     <Sparkles className="size-4 text-green" />
-                    Ask Orbit: “{query}”
+                    {t('cmd.ask', { query })}
                   </Command.Item>
                 </Command.Group>
               )}
@@ -106,7 +108,7 @@ export function CommandPalette() {
                 return (
                   <Command.Group
                     key={g.label}
-                    heading={g.label}
+                    heading={t(g.label)}
                     className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
                   >
                     {items.map((r) => {

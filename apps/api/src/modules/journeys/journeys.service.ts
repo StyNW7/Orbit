@@ -11,6 +11,7 @@ import { ReadinessService } from '../career/readiness.service';
 import { SyncService } from '../graph/graph.module';
 import { UsersService } from '../users/users.service';
 import { milestoneProgress, planJourney, planSkillAddition, type PlannedMilestone } from './journey.planner';
+import { L } from '../../common/i18n/locale';
 
 export interface CustomQuestInput {
   title: string;
@@ -184,7 +185,10 @@ export class JourneysService {
       milestoneId: milestoneIds.get(planned.key)!,
       questId: questIds[0],
       created: true,
-      message: `Added ${skillName} to your ${goal.role.title} Journey with the quest “${planned.quests[0].title}”.`,
+      message: L(
+        `Added ${skillName} to your ${goal.role.title} Journey with the quest “${planned.quests[0].title}”.`,
+        `${skillName} ditambahkan ke Journey ${goal.role.title}-mu dengan quest “${planned.quests[0].title}”.`,
+      ),
     };
   }
 

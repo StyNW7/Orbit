@@ -5,10 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F8FAF9" />
-    <meta name="description" content="Orbit understands where you are, connects what can help you grow, and shows you what to do next." />
-    <title>Orbit — Build Your Path. Become Career-Ready.</title>
+    <meta name="description" content="Orbit understands where you are, connects what can help you grow, and shows you what to do next. Agentic career and personal growth platform — English & Bahasa Indonesia." />
+    <meta property="og:title" content="Orbit — Build Your Path. Become Career-Ready." />
+    <meta property="og:description" content="An agentic career & personal growth platform: explainable career readiness, a connected Career Universe, adaptive journeys and an AI career agent." />
+    <meta property="og:type" content="website" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Orbit</title>
     <script>
-      // Apply the saved theme before first paint to avoid a flash.
+      // Apply the saved theme and language before first paint to avoid a flash.
+      try {
+        var l = localStorage.getItem('orbit.locale');
+        if (l !== 'en' && l !== 'id') l = (navigator.language || '').toLowerCase().indexOf('id') === 0 ? 'id' : 'en';
+        document.documentElement.lang = l;
+      } catch (e) {}
       try {
         var t = localStorage.getItem('orbit.theme');
         var dark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);

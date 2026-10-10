@@ -21,6 +21,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { AGENT_TOOLS } from '@orbit/shared';
 import { AppConfig } from '../../config/app-config';
 import { AppError } from '../../common/http/errors';
+import { currentLocale, withLocale } from '../../common/i18n/locale';
 import { CurrentUser, Public, type AuthUser } from '../../common/auth/auth.decorators';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { toInsightView } from '../../common/mappers';
@@ -48,6 +49,7 @@ export class ChatDto {
   @IsString() @MinLength(1) @MaxLength(2000) message!: string;
   @IsOptional() @IsUUID() conversationId?: string;
   @IsOptional() @ValidateNested() @Type(() => PageContextDto) pageContext?: PageContextDto;
+  @IsOptional() @IsIn(['en', 'id']) locale?: 'en' | 'id';
 }
 
 export class ToolCallDto {
@@ -85,7 +87,8 @@ export class AgentController {
   @Post('chat')
   @HttpCode(HttpStatus.OK)
   chat(@CurrentUser() user: AuthUser, @Body() dto: ChatDto) {
-    return this.agent.chat(user.id, dto);
+    // The body's language wins over the header so a mid-conversation switch applies immediately.
+    return withLocale(dto.locale ?? currentLocale(), () => this.agent.chat(user.id, dto));
   }
 
   @Get('status')

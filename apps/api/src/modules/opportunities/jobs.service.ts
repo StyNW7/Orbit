@@ -10,6 +10,7 @@ import { SKILL_BY_SLUG } from '../../catalog/skills.catalog';
 import { ROLES } from '../../catalog/roles.catalog';
 import { RecommendationService, type UserSignal } from '../recommendations/recommendation.service';
 import { computeJobMatch, type MatchUser } from './job-match.engine';
+import { L, currentLocale } from '../../common/i18n/locale';
 import {
   ArbeitnowJobProvider,
   CuratedJobProvider,
@@ -226,7 +227,7 @@ export class JobsService {
     const view = this.toMatchView(job, user, sims.get(jobId) ?? null, Boolean(saved), app?.id ?? null);
     const template = templateExplanation(view, signal.primaryRoleTitle);
     const ai = await this.ai.generateText(
-      'You are Orbit, a career agent. In 3 short sentences, explain to the user why this job matches them and what to do next. Use only the facts provided. No emoji.',
+      `You are Orbit, a career agent. In 3 short sentences, explain to the user why this job matches them and what to do next. Use only the facts provided. No emoji.${currentLocale() === 'id' ? ' Write in natural Bahasa Indonesia and address the user as "kamu".' : ''}`,
       JSON.stringify({
         job: { title: job.title, company: job.company, type: job.employmentType },
         targetRole: signal.primaryRoleTitle,
@@ -247,9 +248,10 @@ export function embeddingText(o: Pick<Opportunity, 'title' | 'company' | 'descri
 
 function templateExplanation(view: JobMatchView, role: string | null): string {
   const m = view.match;
-  const parts = [`${view.opportunity.title} is a ${m.overall}% match${role ? ` for your ${role} goal` : ''}.`];
-  if (m.reasons.length) parts.push(`You bring ${m.reasons.slice(0, 3).join(', ')}.`);
-  if (m.missingSkills.length) parts.push(`The main gap is ${m.missingSkills.map((s) => s.name).slice(0, 2).join(' and ')} — ${m.recommendedAction.toLowerCase()}.`);
-  else parts.push('You meet the core skill requirements — prepare a tailored application.');
+  const parts = [L(`${view.opportunity.title} is a ${m.overall}% match${role ? ` for your ${role} goal` : ''}.`, `${view.opportunity.title} ${m.overall}% cocok${role ? ` dengan tujuan ${role}-mu` : ' denganmu'}.`)];
+  if (m.reasons.length) parts.push(L(`You bring ${m.reasons.slice(0, 3).join(', ')}.`, `Kamu membawa ${m.reasons.slice(0, 3).join(', ')}.`));
+  const gaps = m.missingSkills.map((s) => s.name).slice(0, 2);
+  if (gaps.length) parts.push(L(`The main gap is ${gaps.join(' and ')} — ${m.recommendedAction.toLowerCase()}.`, `Gap utamanya adalah ${gaps.join(' dan ')} — ${m.recommendedAction.charAt(0).toLowerCase()}${m.recommendedAction.slice(1)}.`));
+  else parts.push(L('You meet the core skill requirements — prepare a tailored application.', 'Kamu sudah memenuhi kebutuhan skill inti — siapkan lamaran yang disesuaikan.'));
   return parts.join(' ');
 }

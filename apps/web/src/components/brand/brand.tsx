@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from 'react';
 import { animate, motion, useMotionValue, useTransform } from 'motion/react';
-import { readinessBand } from '@orbit/shared';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { bandKey } from '@/lib/i18n/labels';
 
 /** Orbit mark: a core, an orbit path and an orange "next step" planet. */
 export function OrbitMark({ className, animated = false }: { className?: string; animated?: boolean }) {
@@ -42,7 +43,7 @@ export function ReadinessRing({
   score,
   size = 168,
   stroke = 12,
-  label = 'Career Readiness',
+  label,
   showBand = true,
   className,
 }: {
@@ -54,6 +55,7 @@ export function ReadinessRing({
   className?: string;
 }) {
   const id = useId();
+  const { t } = useT();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const [drawn, setDrawn] = useState(0);
@@ -61,10 +63,9 @@ export function ReadinessRing({
     const t = requestAnimationFrame(() => setDrawn(Math.max(0, Math.min(100, score))));
     return () => cancelAnimationFrame(t);
   }, [score]);
-  const band = readinessBand(score);
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)} style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${label}: ${Math.round(score)} percent`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t('readiness.percent', { label: label ?? t('readiness.label'), score: Math.round(score) })}>
         <defs>
           <linearGradient id={`g-${id}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#0AB46A" />
@@ -92,7 +93,7 @@ export function ReadinessRing({
           <AnimatedNumber value={score} />
           <span className="text-[0.5em] font-semibold text-muted-foreground">%</span>
         </span>
-        {showBand && size >= 120 && <span className="mt-1.5 text-[12px] font-medium text-muted-foreground">{band.label}</span>}
+        {showBand && size >= 120 && <span className="mt-1.5 text-[12px] font-medium text-muted-foreground">{t(bandKey(score))}</span>}
       </div>
     </div>
   );
@@ -100,10 +101,11 @@ export function ReadinessRing({
 
 /** Small inline readiness pill. */
 export function ReadinessPill({ score, className }: { score: number; className?: string }) {
+  const { t } = useT();
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-muted-green px-2.5 py-1 text-xs font-semibold text-green-strong dark:text-green', className)}>
       <span className="size-1.5 rounded-full bg-green" />
-      <span className="tabular">{Math.round(score)}%</span> ready
+      <span className="tabular">{t('readiness.pill', { score: Math.round(score) })}</span>
     </span>
   );
 }

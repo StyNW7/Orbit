@@ -18,6 +18,7 @@ import { ReadinessService } from '../career/readiness.service';
 import { DiscoverService } from '../discover/discover.service';
 import { QuestsService } from '../quests/quests.service';
 import { NextBestActionService } from './next-best-action.service';
+import { L } from '../../common/i18n/locale';
 
 const DAY = 86_400_000;
 const TIMELINE_TYPES = [
@@ -81,21 +82,29 @@ export class ProgressService {
     if (!gap || !ctx.primaryGoal) return latest ? toInsightView(latest) : null;
     const jobs = await this.prisma.opportunity.count({ where: { isActive: true, skills: { has: gap.slug }, roleSlugs: { has: ctx.primaryGoal.role.slug } } });
     const total = await this.prisma.opportunity.count({ where: { isActive: true, roleSlugs: { has: ctx.primaryGoal.role.slug } } });
+    // Re-written on every load, so the insight follows the user's current language.
+    const role = ctx.primaryGoal.role.title;
+    const message = L(`${gap.name} remains your largest skill gap.`, `${gap.name} masih menjadi gap skill terbesarmu.`);
+    const evidence = [
+      L(`Current level ${gap.currentLevel}, required ${gap.requiredLevel}`, `Level saat ini ${gap.currentLevel}, dibutuhkan ${gap.requiredLevel}`),
+      L(`Appears in ${jobs} of ${total} ${role} openings Orbit tracks`, `Muncul di ${jobs} dari ${total} lowongan ${role} yang dipantau Orbit`),
+    ];
+    const addLabel = L('Add to Journey', 'Tambah ke Journey');
     const row = await this.prisma.agentInsight.upsert({
       where: { userId_dedupeKey: { userId, dedupeKey: `gap:${gap.slug}` } },
       update: {
-        message: `${gap.name} remains your largest skill gap.`,
-        evidence: [`Current level ${gap.currentLevel}, required ${gap.requiredLevel}`, `Appears in ${jobs} of ${total} ${ctx.primaryGoal.role.title} openings Orbit tracks`],
-        suggestedAction: gap.inJourney ? Prisma.DbNull : { label: 'Add to Journey', type: 'ADD_SKILL_TO_JOURNEY', payload: { skillSlug: gap.slug } },
+        message,
+        evidence,
+        suggestedAction: gap.inJourney ? Prisma.DbNull : { label: addLabel, type: 'ADD_SKILL_TO_JOURNEY', payload: { skillSlug: gap.slug } },
       },
       create: {
         userId,
         type: 'GAP',
         dedupeKey: `gap:${gap.slug}`,
-        title: 'Largest gap',
-        message: `${gap.name} remains your largest skill gap.`,
-        evidence: [`Current level ${gap.currentLevel}, required ${gap.requiredLevel}`, `Appears in ${jobs} of ${total} ${ctx.primaryGoal.role.title} openings Orbit tracks`],
-        suggestedAction: gap.inJourney ? undefined : { label: 'Add to Journey', type: 'ADD_SKILL_TO_JOURNEY', payload: { skillSlug: gap.slug } },
+        title: L('Largest gap', 'Gap terbesar'),
+        message,
+        evidence,
+        suggestedAction: gap.inJourney ? undefined : { label: addLabel, type: 'ADD_SKILL_TO_JOURNEY', payload: { skillSlug: gap.slug } },
       },
     });
     // Older gap insights for skills that are no longer the top gap are retired.
@@ -123,14 +132,14 @@ export class ProgressService {
         where: { startsAt: { gte: now, lte: horizon }, roleSlugs: { has: ctx.primaryGoal.role.slug }, id: { notIn: items.map((i) => i.id) } },
         orderBy: { startsAt: 'asc' },
       });
-      if (event) items.push({ id: event.id, kind: 'EVENT', title: event.title, subtitle: `${event.organizer} · recommended`, date: event.startsAt.toISOString(), url: `/app/discover?tab=growth&focus=${event.id}` });
+      if (event) items.push({ id: event.id, kind: 'EVENT', title: event.title, subtitle: `${event.organizer} · ${L('recommended', 'direkomendasikan')}`, date: event.startsAt.toISOString(), url: `/app/discover?tab=growth&focus=${event.id}` });
     }
     for (const a of ctx.applications) {
       if (a.deadline && a.deadline > now && ['SAVED', 'PREPARING'].includes(a.status)) {
-        items.push({ id: a.id, kind: 'APPLICATION_DEADLINE', title: `${a.opportunity.title} deadline`, subtitle: a.opportunity.company, date: a.deadline.toISOString(), url: `/app/discover/applications/${a.id}` });
+        items.push({ id: a.id, kind: 'APPLICATION_DEADLINE', title: L(`${a.opportunity.title} deadline`, `Tenggat ${a.opportunity.title}`), subtitle: a.opportunity.company, date: a.deadline.toISOString(), url: `/app/discover/applications/${a.id}` });
       }
     }
-    for (const q of questDeadlines) items.push({ id: q.id, kind: 'QUEST_DEADLINE', title: q.title, subtitle: 'Quest deadline', date: q.deadline!.toISOString(), url: `/app/journey?quest=${q.id}` });
+    for (const q of questDeadlines) items.push({ id: q.id, kind: 'QUEST_DEADLINE', title: q.title, subtitle: L('Quest deadline', 'Tenggat quest'), date: q.deadline!.toISOString(), url: `/app/journey?quest=${q.id}` });
     for (const r of reminders) items.push({ id: r.id, kind: 'REMINDER', title: r.title, subtitle: r.message, date: r.scheduledAt.toISOString(), url: r.actionUrl ?? '/app' });
     return items.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
   }

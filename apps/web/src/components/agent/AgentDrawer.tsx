@@ -17,7 +17,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { AGENT_ENGINE_LABELS, type AgentActionView, type AgentMessageView, type AgentPageContext } from '@orbit/shared';
+import type { AgentActionView, AgentMessageView, AgentPageContext } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/primitives';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, Tooltip } from '@/components/ui/overlays';
@@ -25,33 +25,20 @@ import { OrbitLoader } from '@/components/common/states';
 import { loadConversation, useAgentAction, useAgentChat, useAgentStatus, useConversations } from '@/hooks/queries';
 import { useUiStore } from '@/stores/ui';
 import { errorMessage } from '@/lib/api';
+import { useT, type MessageKey } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 import { cn, relative } from '@/lib/utils';
 
-const SUGGESTIONS: Record<AgentPageContext['page'], string[]> = {
-  'mission-control': ['What should I focus on this week?', 'Am I on track for my target role?', 'Which gap should I close first?'],
-  universe: ['Why is this skill important?', 'Which gap should I close first?', 'Recommend a book for my biggest gap'],
-  journey: ['Should I complete this quest first?', 'Plan my week around my journey', 'What should I improve next?'],
-  discover: ['Which internship fits me best?', 'Am I ready to apply?', 'Find a workshop for my biggest gap'],
-  application: ['Am I ready to apply?', 'Help me prepare for this interview', 'Remind me to follow up in 2 days'],
-  progress: ['What should I improve next?', 'How has my readiness changed?', 'What should I focus on this week?'],
-  profile: ['What are my strongest skills?', 'Which role models have a path like mine?', 'Which gap should I close first?'],
-  settings: ['What can Orbit do for me?', 'What should I focus on this week?'],
-  other: ['What should I focus on this week?', 'Which gap should I close first?'],
-};
-
-const CONFIRM_LABEL: Partial<Record<AgentActionView['type'], string>> = {
-  ADD_SKILL_TO_JOURNEY: 'Add to Journey',
-  ADD_QUEST: 'Add quest',
-  SAVE_OPPORTUNITY: 'Save & track',
-  UPDATE_APPLICATION_STATUS: 'Update status',
-  CREATE_REMINDER: 'Set reminder',
-  SET_PRIMARY_GOAL: 'Make primary',
-  ADD_CAREER_GOAL: 'Add orbit',
-  BUILD_JOURNEY: 'Generate journey',
-  UPDATE_QUEST_PROGRESS: 'Mark as done',
-  ADD_GRAPH_NODE: 'Add to Universe',
-  SAVE_RESOURCE: 'Save',
-  NAVIGATE: 'Open',
+const SUGGESTIONS: Record<AgentPageContext['page'], MessageKey[]> = {
+  'mission-control': ['agent.sugg.focus', 'agent.sugg.onTrack', 'agent.sugg.firstGap'],
+  universe: ['agent.sugg.whySkill', 'agent.sugg.firstGap', 'agent.sugg.book'],
+  journey: ['agent.sugg.questFirst', 'agent.sugg.planWeek', 'agent.sugg.improve'],
+  discover: ['agent.sugg.internship', 'agent.sugg.ready', 'agent.sugg.workshop'],
+  application: ['agent.sugg.ready', 'agent.sugg.interview', 'agent.sugg.followUp'],
+  progress: ['agent.sugg.improve', 'agent.sugg.readinessChange', 'agent.sugg.focus'],
+  profile: ['agent.sugg.strengths', 'agent.sugg.roleModels', 'agent.sugg.firstGap'],
+  settings: ['agent.sugg.whatCan', 'agent.sugg.focus'],
+  other: ['agent.sugg.focus', 'agent.sugg.firstGap'],
 };
 
 interface ChatMessage extends AgentMessageView {
@@ -71,6 +58,8 @@ export function AgentDrawer() {
   const { data: conversations = [] } = useConversations(open);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { t, locale } = useT();
+  const labels = useLabels();
 
   const send = (text: string) => {
     const message = text.trim();
@@ -79,7 +68,7 @@ export function AgentDrawer() {
     const optimistic: ChatMessage = { id: `local-${Date.now()}`, role: 'USER', content: message, engine: null, toolCalls: [], actions: [], createdAt: new Date().toISOString() };
     setMessages((m) => [...m, optimistic]);
     chat.mutate(
-      { message, conversationId, pageContext },
+      { message, conversationId, pageContext, locale },
       {
         onSuccess: (r) => {
           setConversationId(r.conversationId);
@@ -88,7 +77,7 @@ export function AgentDrawer() {
         onError: (e) => {
           setMessages((m) => [
             ...m,
-            { id: `err-${Date.now()}`, role: 'ASSISTANT', content: `I couldn’t complete that request. ${errorMessage(e)}`, engine: null, toolCalls: [], actions: [], createdAt: new Date().toISOString() },
+            { id: `err-${Date.now()}`, role: 'ASSISTANT', content: t('agent.failed', { error: errorMessage(e) }), engine: null, toolCalls: [], actions: [], createdAt: new Date().toISOString() },
           ]);
         },
       },
@@ -120,7 +109,8 @@ export function AgentDrawer() {
   };
 
   const engine = status?.activeEngine;
-  const contextLabel = pageContext.label ? `${titleForPage(pageContext.page)} · ${pageContext.label}` : titleForPage(pageContext.page);
+  const pageTitle = t(`agent.page.${pageContext.page}` as MessageKey);
+  const contextLabel = pageContext.label ? `${pageTitle} · ${pageContext.label}` : pageTitle;
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
@@ -132,28 +122,28 @@ export function AgentDrawer() {
         >
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-border bg-surface px-4 py-3">
-            <div className="orbit-gradient flex size-9 items-center justify-center rounded-xl text-white">
+            <div className="orbit-gradient flex size-9 items-center justify-center rounded-xl text-white shadow-[0_8px_20px_-10px_rgba(10,180,106,0.9)]">
               <BrainCircuit className="size-[18px]" />
             </div>
             <div className="min-w-0 flex-1">
-              <DialogPrimitive.Title className="font-display text-[15px] font-semibold leading-tight">Orbit Agent</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="font-display text-[15px] font-semibold leading-tight">{t('agent.title')}</DialogPrimitive.Title>
               <p className="flex items-center gap-1.5 truncate text-[12px] text-muted-foreground">
                 <span className={cn('size-1.5 rounded-full', engine === 'planner' ? 'bg-orange' : 'bg-green')} aria-hidden />
-                {engine ? AGENT_ENGINE_LABELS[engine] : 'Connecting…'}
+                {engine ? labels.engine(engine) : t('agent.connecting')}
                 {engine === 'direct' && status?.ai.model ? ` · ${status.ai.model}` : ''}
               </p>
             </div>
             <DropdownMenu>
-              <Tooltip content="Conversation history">
+              <Tooltip content={t('agent.history')}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" aria-label="Conversation history">
+                  <Button variant="ghost" size="icon-sm" aria-label={t('agent.history')}>
                     <History />
                   </Button>
                 </DropdownMenuTrigger>
               </Tooltip>
               <DropdownMenuContent className="w-72">
-                <DropdownMenuLabel>Recent conversations</DropdownMenuLabel>
-                {conversations.length === 0 && <p className="px-2.5 py-2 text-sm text-muted-foreground">No conversations yet.</p>}
+                <DropdownMenuLabel>{t('agent.recent')}</DropdownMenuLabel>
+                {conversations.length === 0 && <p className="px-2.5 py-2 text-sm text-muted-foreground">{t('agent.noConversations')}</p>}
                 {conversations.slice(0, 8).map((c) => (
                   <DropdownMenuItem key={c.id} onSelect={() => void openConversation(c.id)}>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>
@@ -162,13 +152,13 @@ export function AgentDrawer() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Tooltip content="New conversation">
-              <Button variant="ghost" size="icon-sm" onClick={newChat} aria-label="New conversation">
+            <Tooltip content={t('agent.newChat')}>
+              <Button variant="ghost" size="icon-sm" onClick={newChat} aria-label={t('agent.newChat')}>
                 <MessageSquarePlus />
               </Button>
             </Tooltip>
             <DialogPrimitive.Close asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="Close Orbit Agent">
+              <Button variant="ghost" size="icon-sm" aria-label={t('agent.close')}>
                 <X />
               </Button>
             </DialogPrimitive.Close>
@@ -184,7 +174,7 @@ export function AgentDrawer() {
                 {chat.isPending && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
                     <OrbitLoader className="size-7" />
-                    Orbit is analyzing your career context…
+                    {t('agent.thinking')}
                   </div>
                 )}
               </div>
@@ -194,8 +184,11 @@ export function AgentDrawer() {
           {/* Composer */}
           <div className="border-t border-border bg-surface px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
             <div className="mb-2 flex items-center gap-2 text-[11.5px] text-muted-foreground">
-              <Info className="size-3.5" />
-              <span className="truncate">Context: {contextLabel}</span>
+              <Info className="size-3.5 shrink-0" />
+              <span className="truncate">{t('agent.context', { label: contextLabel })}</span>
+              <Tooltip content={t('agent.languageNote')}>
+                <span className="ml-auto shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">{locale}</span>
+              </Tooltip>
             </div>
             <form
               onSubmit={(e) => {
@@ -205,24 +198,25 @@ export function AgentDrawer() {
               className="flex items-end gap-2 rounded-xl border border-border bg-background p-1.5 focus-within:border-green focus-within:ring-4 focus-within:ring-[var(--ring)]"
             >
               <label htmlFor="agent-input" className="sr-only">
-                Message Orbit
+                {t('agent.inputLabel')}
               </label>
               <textarea
                 id="agent-input"
                 ref={inputRef}
                 rows={1}
                 value={input}
+                maxLength={2000}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     send(input);
                   }
                 }}
-                placeholder="Ask about your path, gaps, jobs or next steps…"
+                placeholder={t('agent.placeholder')}
                 className="max-h-36 min-h-[40px] flex-1 resize-none bg-transparent px-2.5 py-2 text-[14px] outline-none placeholder:text-subtle-foreground"
               />
-              <Button type="submit" size="icon" disabled={!input.trim() || chat.isPending} aria-label="Send message">
+              <Button type="submit" size="icon" disabled={!input.trim() || chat.isPending} aria-label={t('agent.send')}>
                 <ArrowUp />
               </Button>
             </form>
@@ -233,23 +227,8 @@ export function AgentDrawer() {
   );
 }
 
-function titleForPage(page: AgentPageContext['page']): string {
-  return (
-    {
-      'mission-control': 'Mission Control',
-      universe: 'Career Universe',
-      journey: 'Journey',
-      discover: 'Discover',
-      application: 'Application',
-      progress: 'Progress',
-      profile: 'Profile',
-      settings: 'Settings',
-      other: 'Orbit',
-    } as const
-  )[page];
-}
-
 function Welcome({ page, onPick }: { page: AgentPageContext['page']; onPick: (s: string) => void }) {
+  const { t } = useT();
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="pt-4">
       <div className="mb-5 flex justify-center">
@@ -260,24 +239,22 @@ function Welcome({ page, onPick }: { page: AgentPageContext['page']; onPick: (s:
           </div>
         </div>
       </div>
-      <h3 className="text-center text-lg font-semibold">How can Orbit help?</h3>
-      <p className="mx-auto mt-1 max-w-xs text-center text-sm text-muted-foreground">
-        Orbit uses your profile, journey, gaps, applications and deadlines to recommend your next best action.
-      </p>
+      <h3 className="text-center text-lg font-semibold">{t('agent.welcomeTitle')}</h3>
+      <p className="mx-auto mt-1 max-w-xs text-center text-sm text-muted-foreground">{t('agent.welcomeDesc')}</p>
       <div className="mt-6 space-y-2">
-        {SUGGESTIONS[page].map((s) => (
+        {SUGGESTIONS[page].map((key) => (
           <button
-            key={s}
-            onClick={() => onPick(s)}
+            key={key}
+            onClick={() => onPick(t(key))}
             className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left text-sm transition hover:border-green hover:bg-muted-green/40"
           >
-            {s}
-            <ArrowUp className="size-4 rotate-45 text-subtle-foreground transition group-hover:text-green" />
+            {t(key)}
+            <ArrowUp className="size-4 shrink-0 rotate-45 text-subtle-foreground transition group-hover:text-green" />
           </button>
         ))}
       </div>
       <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-[11.5px] text-subtle-foreground">
-        <ShieldCheck className="size-3.5" /> Orbit asks before making important changes.
+        <ShieldCheck className="size-3.5" /> {t('agent.asksFirst')}
       </p>
     </motion.div>
   );
@@ -286,7 +263,7 @@ function Welcome({ page, onPick }: { page: AgentPageContext['page']; onPick: (s:
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-green px-4 py-2.5 text-[14px] text-white shadow-[0_6px_16px_-10px_rgba(10,180,106,0.9)]">{text}</div>
+      <div className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-green px-4 py-2.5 text-[14px] text-white shadow-[0_6px_16px_-10px_rgba(10,180,106,0.9)]">{text}</div>
     </div>
   );
 }
@@ -299,16 +276,16 @@ function AssistantMessage({ message }: { message: ChatMessage }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="rounded-2xl rounded-tl-md border border-border bg-surface px-4 py-3 shadow-card">
-          <div className="prose-orbit">
+          <div className="prose-orbit overflow-x-auto">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
           </div>
         </div>
         {message.toolCalls.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Wrench className="size-3 text-subtle-foreground" aria-hidden />
-            {[...new Set(message.toolCalls.map((t) => t.tool))].map((t) => (
-              <Tooltip key={t} content={message.toolCalls.find((x) => x.tool === t)?.summary}>
-                <span className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">{t}</span>
+            {[...new Set(message.toolCalls.map((tc) => tc.tool))].map((tool) => (
+              <Tooltip key={tool} content={message.toolCalls.find((x) => x.tool === tool)?.summary}>
+                <span className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">{tool}</span>
               </Tooltip>
             ))}
           </div>
@@ -329,6 +306,7 @@ function AssistantMessage({ message }: { message: ChatMessage }) {
 }
 
 function ActionCard({ action }: { action: AgentActionView }) {
+  const { t, tm } = useT();
   const [state, setState] = useState<AgentActionView['status']>(action.status);
   const [result, setResult] = useState<{ message: string; url: string | null } | null>(null);
   const { confirm, reject } = useAgentAction();
@@ -352,7 +330,7 @@ function ActionCard({ action }: { action: AgentActionView }) {
             <p className="text-[13.5px] font-semibold leading-snug">{action.title}</p>
             {isWrite && pending && (
               <Badge tone="orange">
-                <ShieldCheck /> Needs confirmation
+                <ShieldCheck /> {t('agent.needsConfirm')}
               </Badge>
             )}
           </div>
@@ -376,10 +354,10 @@ function ActionCard({ action }: { action: AgentActionView }) {
                   })
                 }
               >
-                {CONFIRM_LABEL[action.type] ?? 'Confirm'}
+                {tm(`agent.confirm.${action.type}`, t('common.confirm'))}
               </Button>
               <Button size="sm" variant="ghost" disabled={confirm.isPending} onClick={() => reject.mutate(action.id, { onSuccess: () => setState('REJECTED') })}>
-                Not now
+                {t('common.notNow')}
               </Button>
             </div>
           )}
@@ -393,7 +371,7 @@ function ActionCard({ action }: { action: AgentActionView }) {
                 navigate(result.url!);
               }}
             >
-              Open
+              {t('common.open')}
             </Button>
           )}
         </div>

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Moon, Sun } from 'lucide-react';
 import { Tooltip } from '@/components/ui/overlays';
 import { useResolvedTheme, useUiStore } from '@/stores/ui';
+import { useT } from '@/lib/i18n';
 import { centerOf, cn } from '@/lib/utils';
 
 /**
@@ -11,8 +12,9 @@ import { centerOf, cn } from '@/lib/utils';
 export function ThemeToggle({ className, tone = 'default' }: { className?: string; tone?: 'default' | 'onDark' }) {
   const resolved = useResolvedTheme();
   const setTheme = useUiStore((s) => s.setTheme);
+  const { t } = useT();
   const next = resolved === 'dark' ? 'light' : 'dark';
-  const label = `Switch to ${next} mode`;
+  const label = next === 'dark' ? t('theme.switchToDark') : t('theme.switchToLight');
 
   return (
     <Tooltip content={label}>

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { L } from '../../common/i18n/locale';
 import type { RecommendationWhy, SkillGapView } from '@orbit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmbeddingService } from '../ai/embedding.service';
@@ -133,13 +134,18 @@ export class RecommendationService {
     const role = signal.primaryRoleTitle;
     let whyItMatters: string;
     if (gap) {
-      whyItMatters = `${gap.name} is ${signal.gaps[0]?.slug === gap.slug ? 'your largest' : 'an open'} ${role ?? 'career'} gap (${gap.currentLevel} of ${gap.requiredLevel}). This ${kind} builds it directly.`;
+      const largest = signal.gaps[0]?.slug === gap.slug;
+      const kindId: Record<string, string> = { workshop: 'workshop', event: 'acara', certification: 'sertifikasi', course: 'kursus', book: 'buku', paper: 'jurnal ilmiah' };
+      whyItMatters = L(
+        `${gap.name} is ${largest ? 'your largest' : 'an open'} ${role ?? 'career'} gap (${gap.currentLevel} of ${gap.requiredLevel}). This ${kind} builds it directly.`,
+        `${gap.name} adalah ${largest ? 'gap terbesarmu' : 'gap terbuka'} untuk ${role ?? 'kariermu'} (${gap.currentLevel} dari ${gap.requiredLevel}). ${(kindId[kind] ?? kind).replace(/^./, (c) => c.toUpperCase())} ini membangunnya secara langsung.`,
+      );
     } else if (skill && role) {
-      whyItMatters = `Strengthens ${skill}, which ${role} roles rely on.`;
+      whyItMatters = L(`Strengthens ${skill}, which ${role} roles rely on.`, `Memperkuat ${skill}, yang diandalkan oleh peran ${role}.`);
     } else if (role) {
-      whyItMatters = `Relevant to your ${role} direction.`;
+      whyItMatters = L(`Relevant to your ${role} direction.`, `Relevan dengan arah ${role}-mu.`);
     } else {
-      whyItMatters = `Matches the interests in your profile.`;
+      whyItMatters = L('Matches the interests in your profile.', 'Sesuai dengan minat di profilmu.');
     }
     return {
       whyItMatters,

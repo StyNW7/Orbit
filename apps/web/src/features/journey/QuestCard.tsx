@@ -14,7 +14,7 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-import { EVIDENCE_TYPE_LABELS, EVIDENCE_TYPES, READINESS_CATEGORY_LABELS, type EvidenceType, type QuestView } from '@orbit/shared';
+import { EVIDENCE_TYPES, type EvidenceType, type QuestView } from '@orbit/shared';
 import { Button } from '@/components/ui/button';
 import { Badge, Input, Label, Progress, Textarea } from '@/components/ui/primitives';
 import { Dialog, DialogContent } from '@/components/ui/overlays';
@@ -23,6 +23,8 @@ import { useCompleteQuest, useQuestTask, useSubmitEvidence, useUpdateQuest, useU
 import { useUiStore } from '@/stores/ui';
 import { api } from '@/lib/api';
 import { cn, friendlyDate } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import { useLabels } from '@/lib/i18n/labels';
 
 export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -33,6 +35,8 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
   const updateQuest = useUpdateQuest();
   const openAgent = useUiStore((s) => s.openAgent);
   const setPageContext = useUiStore((s) => s.setPageContext);
+  const { t, tn } = useT();
+  const labels = useLabels();
   const done = quest.status === 'COMPLETED';
   const openTasks = quest.tasks.filter((t) => !t.completed).length;
   const needsEvidence = quest.evidenceRequired && quest.evidence.length === 0;
@@ -58,8 +62,8 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className={cn('text-[16px] font-semibold leading-snug', done && 'text-muted-foreground')}>{quest.title}</span>
-            {done && <Badge tone="green">Completed</Badge>}
-            {!done && quest.progress === 100 && <Badge tone="orange">Ready to complete</Badge>}
+            {done && <Badge tone="green">{t('quest.completed')}</Badge>}
+            {!done && quest.progress === 100 && <Badge tone="orange">{t('quest.readyToComplete')}</Badge>}
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -68,15 +72,15 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
             <span className="inline-flex items-center gap-1">
               <Clock className="size-3.5" /> {quest.estimatedEffort}
             </span>
-            <span>Impact: {READINESS_CATEGORY_LABELS[quest.impact]}</span>
-            {quest.relatedSkill && <span>Skill: {quest.relatedSkill.name}</span>}
+            <span>{t('quest.impact', { category: labels.readiness(quest.impact) })}</span>
+            {quest.relatedSkill && <span>{t('quest.skill', { name: quest.relatedSkill.name })}</span>}
             {quest.deadline && (
               <span className="inline-flex items-center gap-1 text-orange-strong dark:text-orange">
-                <CalendarClock className="size-3.5" /> Due {friendlyDate(quest.deadline)}
+                <CalendarClock className="size-3.5" /> {t('quest.due', { date: friendlyDate(quest.deadline) })}
               </span>
             )}
           </span>
-          {!done && <Progress value={quest.progress} className="mt-3 h-1.5" tone="gradient" label={`${quest.title} progress`} />}
+          {!done && <Progress value={quest.progress} className="mt-3 h-1.5" tone="gradient" label={t('quest.progressLabel', { title: quest.title })} />}
         </span>
         <ChevronDown className={cn('mt-1 size-5 shrink-0 text-subtle-foreground transition', open && 'rotate-180')} />
       </button>
@@ -87,21 +91,21 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
             <div className="border-t border-border px-5 pb-5 pt-4">
               {quest.objective && (
                 <p className="text-[14px]">
-                  <span className="font-semibold">Objective · </span>
+                  <span className="font-semibold">{t('quest.objective')}</span>
                   <span className="text-muted-foreground">{quest.objective}</span>
                 </p>
               )}
-              <ul className="mt-4 space-y-1" aria-label="Tasks">
-                {quest.tasks.map((t) => (
-                  <li key={t.id}>
-                    <label className={cn('flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[14px] transition hover:bg-surface-2', t.completed && 'text-muted-foreground line-through', done && 'cursor-default')}>
+              <ul className="mt-4 space-y-1" aria-label={t('quest.tasks')}>
+                {quest.tasks.map((task) => (
+                  <li key={task.id}>
+                    <label className={cn('flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[14px] transition hover:bg-surface-2', task.completed && 'text-muted-foreground line-through', done && 'cursor-default')}>
                       <Checkbox
-                        checked={t.completed}
+                        checked={task.completed}
                         disabled={done}
-                        onCheckedChange={(v) => toggle.mutate({ questId: quest.id, taskId: t.id, completed: Boolean(v) })}
-                        aria-label={t.title}
+                        onCheckedChange={(v) => toggle.mutate({ questId: quest.id, taskId: task.id, completed: Boolean(v) })}
+                        aria-label={task.title}
                       />
-                      {t.title}
+                      <span className="min-w-0 flex-1">{task.title}</span>
                     </label>
                   </li>
                 ))}
@@ -109,7 +113,7 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
 
               {quest.resources.length > 0 && (
                 <div className="mt-4">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Resources</p>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t('quest.resources')}</p>
                   <div className="flex flex-wrap gap-2">
                     {quest.resources.map((r) => (
                       <a key={r.url} href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[12.5px] hover:border-green">
@@ -124,13 +128,13 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
               {(quest.evidenceRequirement || quest.evidence.length > 0) && (
                 <div className="mt-4 rounded-xl bg-surface-2 p-3.5">
                   <p className="flex items-center gap-1.5 text-[12.5px] font-semibold">
-                    <FileCheck2 className="size-4 text-green" /> Evidence {quest.evidenceRequired ? '(required)' : '(optional)'}
+                    <FileCheck2 className="size-4 text-green" /> {t('quest.evidence')} {quest.evidenceRequired ? t('quest.required') : t('quest.optional')}
                   </p>
                   {quest.evidenceRequirement && <p className="mt-0.5 text-[12.5px] text-muted-foreground">{quest.evidenceRequirement}</p>}
                   {quest.evidence.map((e) => (
                     <div key={e.id} className="mt-3 rounded-lg border border-border bg-surface p-3 text-[13px]">
                       <div className="flex items-center gap-2">
-                        <Badge tone="neutral">{EVIDENCE_TYPE_LABELS[e.type]}</Badge>
+                        <Badge tone="neutral">{labels.evidence(e.type)}</Badge>
                         <span className="text-xs text-subtle-foreground">{friendlyDate(e.createdAt)}</span>
                       </div>
                       {e.url && (
@@ -156,15 +160,15 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
 
               {!done && (
                 <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <Button onClick={tryComplete} loading={complete.isPending} disabled={needsEvidence} title={needsEvidence ? 'Add evidence first' : undefined}>
-                    <Check /> Complete quest
+                  <Button onClick={tryComplete} loading={complete.isPending} disabled={needsEvidence} title={needsEvidence ? t('quest.addEvidenceFirst') : undefined}>
+                    <Check /> {t('quest.complete')}
                   </Button>
                   <Button variant="secondary" onClick={() => setEvidenceOpen(true)}>
-                    <Link2 /> Add evidence
+                    <Link2 /> {t('quest.addEvidence')}
                   </Button>
                   <label className="inline-flex items-center gap-2 text-[13px] text-muted-foreground">
                     <CalendarClock className="size-4" />
-                    <span className="sr-only">Quest deadline</span>
+                    <span className="sr-only">{t('quest.deadline')}</span>
                     <input
                       type="date"
                       className="h-9 rounded-lg border border-border bg-surface px-2 text-[13px]"
@@ -172,12 +176,12 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
                       onChange={(e) => updateQuest.mutate({ questId: quest.id, deadline: e.target.value ? new Date(`${e.target.value}T17:00:00`).toISOString() : null })}
                     />
                   </label>
-                  <Button variant="ghost" className="ml-auto" onClick={() => openAgent(`Should I complete "${quest.title}" first?`)}>
-                    <BrainCircuit /> Ask Orbit
+                  <Button variant="ghost" className="ml-auto" onClick={() => openAgent(t('agent.prompt.questFirst', { title: quest.title }))}>
+                    <BrainCircuit /> {t('common.askOrbit')}
                   </Button>
                 </div>
               )}
-              {needsEvidence && !done && <p className="mt-2 text-[12.5px] text-muted-foreground">This quest needs evidence before Orbit can mark it complete.</p>}
+              {needsEvidence && !done && <p className="mt-2 text-[12.5px] text-muted-foreground">{t('quest.needsEvidence')}</p>}
             </div>
           </motion.div>
         )}
@@ -185,17 +189,17 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
 
       <EvidenceDialog quest={quest} open={evidenceOpen} onOpenChange={setEvidenceOpen} />
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent title="Complete this quest?" description={`${openTasks} task${openTasks === 1 ? ' is' : 's are'} still open. Confirm you finished ${openTasks === 1 ? 'it' : 'them'} in real life.`}>
-          <p className="text-sm text-muted-foreground">Orbit never marks real-world achievements on its own — your confirmation updates XP, your Universe and Career Readiness.</p>
+        <DialogContent title={t('quest.confirmTitle')} description={tn('quest.confirmDesc', openTasks)}>
+          <p className="text-sm text-muted-foreground">{t('quest.confirmNote')}</p>
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-              Not yet
+              {t('quest.notYet')}
             </Button>
             <Button
               loading={complete.isPending}
               onClick={() => complete.mutate({ questId: quest.id, completeRemainingTasks: true }, { onSuccess: () => setConfirmOpen(false) })}
             >
-              Yes, I completed it
+              {t('quest.yesDone')}
             </Button>
           </div>
         </DialogContent>
@@ -216,15 +220,18 @@ function EvidenceDialog({ quest, open, onOpenChange }: { quest: QuestView; open:
   const [file, setFile] = useState<File | null>(null);
   const submit = useSubmitEvidence();
   const upload = useUploadFile();
+  const { t } = useT();
+  const labels = useLabels();
   const needsUrl = ['URL', 'GITHUB', 'PORTFOLIO'].includes(type);
   const needsFile = type === 'FILE' || type === 'CERTIFICATE';
-  const valid = needsUrl ? /^https?:\/\/\S+$/.test(url) : needsFile ? Boolean(file) : text.trim().length >= 10;
+  const fileTooLarge = Boolean(file && file.size > 4 * 1024 * 1024);
+  const valid = needsUrl ? /^https?:\/\/\S+$/.test(url.trim()) : needsFile ? Boolean(file) && !fileTooLarge : text.trim().length >= 10;
 
   const save = async () => {
     let fileId: string | undefined;
     if (needsFile && file) fileId = (await upload.mutateAsync({ file, purpose: type === 'CERTIFICATE' ? 'CERTIFICATE' : 'EVIDENCE' })).id;
     submit.mutate(
-      { questId: quest.id, type, url: needsUrl ? url : undefined, text: text.trim() || undefined, fileId },
+      { questId: quest.id, type, url: needsUrl ? url.trim() : undefined, text: text.trim() || undefined, fileId },
       {
         onSuccess: () => {
           onOpenChange(false);
@@ -238,35 +245,36 @@ function EvidenceDialog({ quest, open, onOpenChange }: { quest: QuestView; open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="Add evidence" description={quest.evidenceRequirement ?? 'Show what you built or learned. Orbit can review it, but you decide when the quest is done.'}>
+      <DialogContent title={t('quest.ev.title')} description={quest.evidenceRequirement ?? t('quest.ev.default')}>
         <div className="space-y-4">
           <div>
-            <Label>Evidence type</Label>
-            <Select className="mt-1.5" value={type} onValueChange={(v) => setType(v as EvidenceType)} options={EVIDENCE_TYPES.map((t) => ({ value: t, label: EVIDENCE_TYPE_LABELS[t] }))} label="Evidence type" />
+            <Label>{t('quest.ev.type')}</Label>
+            <Select className="mt-1.5" value={type} onValueChange={(v) => setType(v as EvidenceType)} options={EVIDENCE_TYPES.map((et) => ({ value: et, label: labels.evidence(et) }))} label={t('quest.ev.type')} />
           </div>
           {needsUrl && (
             <div>
-              <Label htmlFor="ev-url">Link</Label>
+              <Label htmlFor="ev-url">{t('quest.ev.link')}</Label>
               <Input id="ev-url" className="mt-1.5" placeholder="https://" value={url} onChange={(e) => setUrl(e.target.value)} />
             </div>
           )}
           {needsFile && (
             <div>
-              <Label htmlFor="ev-file">File (PDF or image, max 8 MB)</Label>
+              <Label htmlFor="ev-file">{t('quest.ev.file')}</Label>
               <input id="ev-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="mt-1.5 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              {fileTooLarge && <p className="mt-1.5 text-[12.5px] text-danger">{t('onb.tooLarge')}</p>}
             </div>
           )}
           <div>
-            <Label htmlFor="ev-text">{type === 'TEXT' ? 'Reflection' : 'Notes (optional)'}</Label>
-            <Textarea id="ev-text" className="mt-1.5" rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do, and what did you learn?" />
+            <Label htmlFor="ev-text">{type === 'TEXT' ? t('quest.ev.reflection') : t('quest.ev.notes')}</Label>
+            <Textarea id="ev-text" className="mt-1.5" rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder={t('quest.ev.placeholder')} />
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => void save()} disabled={!valid} loading={submit.isPending || upload.isPending}>
-            Save evidence
+            {t('quest.ev.save')}
           </Button>
         </div>
       </DialogContent>

@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AppConfig } from './config/app-config';
+import { localeMiddleware } from './common/i18n/locale';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: false });
@@ -16,7 +17,11 @@ async function bootstrap() {
     origin: config.corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'X-Orbit-Locale', 'X-Orbit-Tool-Key'],
+    maxAge: 86400,
   });
+  // Interface language for server-generated guidance and Orbit Agent answers.
+  app.use(localeMiddleware);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

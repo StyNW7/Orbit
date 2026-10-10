@@ -4,6 +4,7 @@ import '@xyflow/react/dist/style.css';
 import { Check, Flag, Lock, Route } from 'lucide-react';
 import type { MilestoneView } from '@orbit/shared';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 const HANDLE = '!size-2 !border-0 !bg-transparent';
 const SIDES = [
@@ -41,6 +42,7 @@ type MilestoneNodeData = { milestone: MilestoneView; selected: boolean; index: n
 
 const MilestoneNode = memo(function MilestoneNode({ data }: NodeProps<Node<MilestoneNodeData>>) {
   const m = data.milestone;
+  const { t, tn } = useT();
   const done = m.status === 'COMPLETED';
   const active = m.status === 'IN_PROGRESS' || data.isNext;
   const r = 18;
@@ -64,10 +66,10 @@ const MilestoneNode = memo(function MilestoneNode({ data }: NodeProps<Node<Miles
           </span>
         </div>
         <div className="min-w-0">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground">Milestone {data.index + 1}</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground">{t('journey.milestoneN', { n: data.index + 1 })}</p>
           <p className="truncate text-[14px] font-semibold leading-tight">{m.title}</p>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-            {m.quests.length} {m.quests.length === 1 ? 'quest' : 'quests'}
+            {tn('journey.questCount', m.quests.length)}
           </p>
         </div>
       </div>
@@ -76,6 +78,7 @@ const MilestoneNode = memo(function MilestoneNode({ data }: NodeProps<Node<Miles
 });
 
 const GoalNode = memo(function GoalNode({ data }: NodeProps<Node<{ title: string; readiness: number | null }>>) {
+  const { t } = useT();
   return (
     <div className="orbit-gradient flex w-[170px] items-center gap-3 rounded-2xl p-3.5 text-white shadow-[0_12px_32px_-12px_rgba(10,180,106,0.9)]">
       <Handles />
@@ -83,9 +86,9 @@ const GoalNode = memo(function GoalNode({ data }: NodeProps<Node<{ title: string
         <Flag className="size-5" />
       </span>
       <div className="min-w-0">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/75">Job ready</p>
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/75">{t('journey.jobReady')}</p>
         <p className="truncate text-[14px] font-bold leading-tight">{data.title}</p>
-        {data.readiness !== null && <p className="text-[11.5px] text-white/85">{Math.round(data.readiness)}% today</p>}
+        {data.readiness !== null && <p className="text-[11.5px] text-white/85">{t('journey.todayPct', { score: Math.round(data.readiness) })}</p>}
       </div>
     </div>
   );
@@ -116,6 +119,7 @@ export function JourneyFlow({
   readiness: number | null;
 }) {
   const nextId = milestones.find((m) => m.status !== 'COMPLETED')?.id;
+  const { t } = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {
@@ -187,7 +191,7 @@ export function JourneyFlow({
         panOnScroll
         zoomOnScroll={false}
         proOptions={{ hideAttribution: true }}
-        aria-label="Journey roadmap"
+        aria-label={t('journey.roadmapLabel')}
       >
         <Background gap={22} size={1} color="var(--border-strong)" />
       </ReactFlow>

@@ -3,6 +3,10 @@
  * Enum string values mirror the Prisma enums in apps/api/prisma/schema.prisma.
  */
 
+/** Interface and agent languages. The API reads the X-Orbit-Locale header. */
+export const APP_LOCALES = ['en', 'id'] as const;
+export type AppLocale = (typeof APP_LOCALES)[number];
+
 export const BRAND = {
   name: 'Orbit',
   tagline: 'Build Your Path. Become Career-Ready.',

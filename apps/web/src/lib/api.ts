@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@orbit/shared';
 import { getAccessToken, handleUnauthorized } from './auth';
+import { getLocale, translate } from './i18n';
 
 export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:4000/api';
 
@@ -20,7 +21,8 @@ type Body = Record<string, unknown> | unknown[] | FormData | undefined;
 
 async function request<T>(method: string, path: string, body?: Body, signal?: AbortSignal): Promise<T> {
   const token = await getAccessToken();
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  // The locale lets Orbit Agent and server-generated guidance answer in the user's language.
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-Orbit-Locale': getLocale() };
   if (token) headers.Authorization = `Bearer ${token}`;
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
@@ -35,7 +37,7 @@ async function request<T>(method: string, path: string, body?: Body, signal?: Ab
     });
   } catch (error) {
     if ((error as Error).name === 'AbortError') throw error;
-    throw new ApiError('NETWORK_ERROR', 'Orbit cannot reach the server. Check your connection and try again.', 0, true);
+    throw new ApiError('NETWORK_ERROR', translate('error.network'), 0, true);
   }
 
   let payload: ApiResponse<T> | null = null;
@@ -54,7 +56,7 @@ async function request<T>(method: string, path: string, body?: Body, signal?: Ab
     const err = payload && payload.success === false ? payload.error : null;
     throw new ApiError(
       err?.code ?? 'REQUEST_FAILED',
-      err?.message ?? 'Something went wrong. Please try again.',
+      err?.message ?? translate('error.generic'),
       res.status,
       err?.retryable ?? res.status >= 500,
       err?.details,
@@ -77,7 +79,7 @@ export const api = {
   async blob(path: string): Promise<Blob> {
     const token = await getAccessToken();
     const res = await fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-    if (!res.ok) throw new ApiError('DOWNLOAD_FAILED', 'Could not open this file.', res.status);
+    if (!res.ok) throw new ApiError('DOWNLOAD_FAILED', translate('error.download'), res.status);
     return res.blob();
   },
 };
@@ -85,5 +87,5 @@ export const api = {
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return 'Something went wrong.';
+  return translate('error.genericShort');
 }

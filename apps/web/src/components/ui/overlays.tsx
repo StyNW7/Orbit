@@ -6,6 +6,7 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
 // Dialog
@@ -22,6 +23,7 @@ export function DialogContent({
   hideClose,
   ...props
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { title: string; description?: string; hideClose?: boolean }) {
+  const { t } = useT();
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#101714]/40 backdrop-blur-[2px] dark:bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in" />
@@ -42,7 +44,7 @@ export function DialogContent({
         </div>
         {children}
         {!hideClose && (
-          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground" aria-label="Close">
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1.5 text-muted-foreground transition hover:bg-surface-2 hover:text-foreground" aria-label={t('common.close')}>
             <X className="size-4" />
           </DialogPrimitive.Close>
         )}

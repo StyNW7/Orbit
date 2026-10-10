@@ -21,6 +21,8 @@ import { NextBestActionService } from '../progress/next-best-action.service';
 import { resolveSkillSlug } from '../skills/skill-matcher';
 import type { ToolDefinition } from '../ai/ai.types';
 import { ContextBuilderService } from './context-builder.service';
+import { L, currentLocale } from '../../common/i18n/locale';
+import { id as idLocale } from 'date-fns/locale';
 
 export interface ToolResult {
   summary: string;
@@ -124,9 +126,9 @@ export function parseWhen(when: string, now = new Date()): Date | null {
     if (time[3] === 'pm' && hours < 12) hours += 12;
   }
   const at = (d: Date) => set(d, { hours, minutes, seconds: 0, milliseconds: 0 });
-  let m = w.match(/in (\d+) (hour|hours|jam)/);
+  let m = w.match(/(?:in|dalam) (\d+) (hour|hours|jam)/) ?? w.match(/(\d+) jam lagi/);
   if (m) return addHours(now, Number(m[1]));
-  m = w.match(/in (\d+) (day|days|hari)/);
+  m = w.match(/(?:in|dalam) (\d+) (day|days|hari)/) ?? w.match(/(\d+) hari lagi/);
   if (m) return at(addDays(now, Number(m[1])));
   if (/tomorrow|besok/.test(w)) return at(addDays(now, 1));
   if (/next week|minggu depan/.test(w)) return at(addDays(now, 7));
@@ -269,7 +271,17 @@ export class ToolRegistryService {
         if (first && goal?.isPrimary) {
           const jobs = await this.prisma.opportunity.count({ where: { isActive: true, skills: { has: first.slug }, roleSlugs: { has: goal.role.slug } } });
           actions.push(
-            await this.suggest(userId, conversationId, name, 'ADD_SKILL_TO_JOURNEY', `Add ${first.name} to Journey`, `${first.name} is required by ${jobs} matching job${jobs === 1 ? '' : 's'}. Orbit will create the quest “${questTemplateForSkill(first.slug).title}”.`, {
+            await this.suggest(
+              userId,
+              conversationId,
+              name,
+              'ADD_SKILL_TO_JOURNEY',
+              L(`Add ${first.name} to Journey`, `Tambahkan ${first.name} ke Journey`),
+              L(
+                `${first.name} is required by ${jobs} matching job${jobs === 1 ? '' : 's'}. Orbit will create the quest “${questTemplateForSkill(first.slug).title}”.`,
+                `${first.name} dibutuhkan oleh ${jobs} lowongan yang cocok. Orbit akan membuat quest “${questTemplateForSkill(first.slug).title}”.`,
+              ),
+              {
               skillSlug: first.slug,
             }),
           );
@@ -288,7 +300,17 @@ export class ToolRegistryService {
         const best = jobs.find((j) => !j.saved);
         if (best) {
           actions.push(
-            await this.suggest(userId, conversationId, name, 'SAVE_OPPORTUNITY', `Save ${best.opportunity.title}`, `${best.opportunity.company} · ${best.match.overall}% match. Orbit will track it and remind you before the deadline.`, {
+            await this.suggest(
+              userId,
+              conversationId,
+              name,
+              'SAVE_OPPORTUNITY',
+              L(`Save ${best.opportunity.title}`, `Simpan ${best.opportunity.title}`),
+              L(
+                `${best.opportunity.company} · ${best.match.overall}% match. Orbit will track it and remind you before the deadline.`,
+                `${best.opportunity.company} · ${best.match.overall}% cocok. Orbit akan memantaunya dan mengingatkanmu sebelum tenggat.`,
+              ),
+              {
               opportunityId: best.opportunity.id,
             }),
           );
@@ -319,7 +341,7 @@ export class ToolRegistryService {
         const actions: AgentAction[] = [];
         const event = items.find((i) => i.kind === 'EVENT' && !i.saved);
         if (event) {
-          actions.push(await this.suggest(userId, conversationId, name, 'SAVE_RESOURCE', `Save ${event.title}`, event.why.whyItMatters, { kind: 'EVENT', itemId: event.id }));
+          actions.push(await this.suggest(userId, conversationId, name, 'SAVE_RESOURCE', L(`Save ${event.title}`, `Simpan ${event.title}`), event.why.whyItMatters, { kind: 'EVENT', itemId: event.id }));
         }
         return {
           summary: `Found ${items.length} growth resources${skill ? ` for ${skill}` : ''}`,
@@ -365,13 +387,31 @@ export class ToolRegistryService {
         const slug = skill ? resolveSkillSlug(skill) : null;
         if (slug) {
           const tpl = questTemplateForSkill(slug);
-          const action = await this.suggest(userId, conversationId, name, 'ADD_SKILL_TO_JOURNEY', `Add ${SKILL_BY_SLUG.get(slug)?.name ?? skill} to Journey`, `Creates the quest “${tpl.title}” (${tpl.tasks.length} tasks, ${tpl.xp} XP).`, { skillSlug: slug });
+          const skillName = SKILL_BY_SLUG.get(slug)?.name ?? skill;
+          const action = await this.suggest(
+            userId,
+            conversationId,
+            name,
+            'ADD_SKILL_TO_JOURNEY',
+            L(`Add ${skillName} to Journey`, `Tambahkan ${skillName} ke Journey`),
+            L(`Creates the quest “${tpl.title}” (${tpl.tasks.length} tasks, ${tpl.xp} XP).`, `Membuat quest “${tpl.title}” (${tpl.tasks.length} tugas, ${tpl.xp} XP).`),
+            { skillSlug: slug },
+          );
           return { summary: 'Proposed adding a skill to the journey (awaiting confirmation)', data: { status: 'awaiting_user_confirmation', quest: tpl.title }, actions: [action] };
         }
         const ctx = await this.context.load(userId);
         if (!ctx.primaryGoal) return { summary: 'No target role set', data: { error: 'Set a target role first.' }, actions: [] };
         const has = Boolean(ctx.primaryGoal.journey);
-        const action = await this.pending(userId, conversationId, name, 'BUILD_JOURNEY', has ? `Expand your ${ctx.primaryGoal.role.title} Journey` : `Generate your ${ctx.primaryGoal.role.title} Journey`, has ? 'Adds the remaining milestones and quests for your role.' : 'Creates milestones and quests from your gaps.', {});
+        const roleTitle = ctx.primaryGoal.role.title;
+        const action = await this.pending(
+          userId,
+          conversationId,
+          name,
+          'BUILD_JOURNEY',
+          has ? L(`Expand your ${roleTitle} Journey`, `Perluas Journey ${roleTitle}-mu`) : L(`Generate your ${roleTitle} Journey`, `Buat Journey ${roleTitle}-mu`),
+          has ? L('Adds the remaining milestones and quests for your role.', 'Menambahkan sisa milestone dan quest untuk peranmu.') : L('Creates milestones and quests from your gaps.', 'Membuat milestone dan quest dari gap-mu.'),
+          {},
+        );
         return { summary: 'Proposed journey generation (awaiting confirmation)', data: { status: 'awaiting_user_confirmation' }, actions: [action] };
       }
 
@@ -379,7 +419,15 @@ export class ToolRegistryService {
         const label = str('label');
         if (!label) return { summary: 'Missing label', data: { error: 'label is required' }, actions: [] };
         const nodeType = ['SKILL', 'PROJECT', 'GOAL', 'EXPERIENCE', 'CERTIFICATION'].includes(str('nodeType') ?? '') ? str('nodeType') : 'SKILL';
-        const action = await this.suggest(userId, conversationId, name, 'ADD_GRAPH_NODE', `Add “${label}” to your Universe`, str('description') ?? 'Connect this to your Career Universe.', { label, nodeType, description: str('description') });
+        const action = await this.suggest(
+          userId,
+          conversationId,
+          name,
+          'ADD_GRAPH_NODE',
+          L(`Add “${label}” to your Universe`, `Tambahkan “${label}” ke Universe-mu`),
+          str('description') ?? L('Connect this to your Career Universe.', 'Hubungkan ini dengan Career Universe-mu.'),
+          { label, nodeType, description: str('description') },
+        );
         return { summary: 'Suggested a Career Universe update', data: { status: 'awaiting_user_confirmation' }, actions: [action] };
       }
 
@@ -395,7 +443,15 @@ export class ToolRegistryService {
           }
         }
         if (!best) return { summary: 'No matching open task', data: { error: 'No open task matches that description.' }, actions: [] };
-        const action = await this.pending(userId, conversationId, name, 'UPDATE_QUEST_PROGRESS', `Mark “${best.taskTitle}” as done`, `Part of ${best.questTitle}.`, { questId: best.questId, taskId: best.taskId, completed: true });
+        const action = await this.pending(
+          userId,
+          conversationId,
+          name,
+          'UPDATE_QUEST_PROGRESS',
+          L(`Mark “${best.taskTitle}” as done`, `Tandai “${best.taskTitle}” selesai`),
+          L(`Part of ${best.questTitle}.`, `Bagian dari ${best.questTitle}.`),
+          { questId: best.questId, taskId: best.taskId, completed: true },
+        );
         return { summary: 'Proposed a progress update (awaiting confirmation)', data: { status: 'awaiting_user_confirmation', task: best.taskTitle }, actions: [action] };
       }
 
@@ -405,7 +461,15 @@ export class ToolRegistryService {
           const opportunityId = str('opportunityId');
           const job = opportunityId ? await this.prisma.opportunity.findUnique({ where: { id: opportunityId } }) : null;
           if (!job) return { summary: 'Opportunity not found', data: { error: 'Use find_opportunities to get a valid opportunityId first.' }, actions: [] };
-          const a = await this.pending(userId, conversationId, name, 'SAVE_OPPORTUNITY', `Save ${job.title}`, `${job.company} — Orbit will track it and remind you before the deadline.`, { opportunityId: job.id });
+          const a = await this.pending(
+            userId,
+            conversationId,
+            name,
+            'SAVE_OPPORTUNITY',
+            L(`Save ${job.title}`, `Simpan ${job.title}`),
+            L(`${job.company} — Orbit will track it and remind you before the deadline.`, `${job.company} — Orbit akan memantaunya dan mengingatkanmu sebelum tenggat.`),
+            { opportunityId: job.id },
+          );
           return { summary: 'Proposed saving an opportunity (awaiting confirmation)', data: { status: 'awaiting_user_confirmation' }, actions: [a] };
         }
         const status = str('status') as ApplicationStatus | undefined;
@@ -417,15 +481,28 @@ export class ToolRegistryService {
           orderBy: { updatedAt: 'desc' },
         });
         if (!app) return { summary: 'Application not found', data: { error: 'No matching application.' }, actions: [] };
-        const a = await this.pending(userId, conversationId, name, 'UPDATE_APPLICATION_STATUS', `Move ${app.opportunity.title} to ${status.toLowerCase()}`, `${app.opportunity.company} · currently ${app.status.toLowerCase()}.`, { applicationId: app.id, status });
+        const a = await this.pending(
+          userId,
+          conversationId,
+          name,
+          'UPDATE_APPLICATION_STATUS',
+          L(`Move ${app.opportunity.title} to ${status.toLowerCase()}`, `Pindahkan ${app.opportunity.title} ke ${status.toLowerCase()}`),
+          L(`${app.opportunity.company} · currently ${app.status.toLowerCase()}.`, `${app.opportunity.company} · saat ini ${app.status.toLowerCase()}.`),
+          { applicationId: app.id, status },
+        );
         return { summary: 'Proposed an application status change (awaiting confirmation)', data: { status: 'awaiting_user_confirmation' }, actions: [a] };
       }
 
       case 'create_reminder': {
-        const title = str('title') ?? 'Career reminder';
+        const title = str('title') ?? L('Career reminder', 'Pengingat karier');
         const when = parseWhen(str('when') ?? '');
         if (!when) return { summary: 'Could not understand the time', data: { error: 'Ask the user for a specific time.' }, actions: [] };
-        const a = await this.suggest(userId, conversationId, name, 'CREATE_REMINDER', `Remind me: ${title}`, format(when, "EEEE, d MMM 'at' HH:mm"), { title, scheduledAt: when.toISOString(), message: str('message') ?? 'Reminder from Orbit' });
+        const whenLabel = currentLocale() === 'id' ? format(when, "EEEE, d MMM 'pukul' HH:mm", { locale: idLocale }) : format(when, "EEEE, d MMM 'at' HH:mm");
+        const a = await this.suggest(userId, conversationId, name, 'CREATE_REMINDER', L(`Remind me: ${title}`, `Ingatkan aku: ${title}`), whenLabel, {
+          title,
+          scheduledAt: when.toISOString(),
+          message: str('message') ?? L('Reminder from Orbit', 'Pengingat dari Orbit'),
+        });
         return { summary: 'Proposed a reminder (awaiting confirmation)', data: { status: 'awaiting_user_confirmation', when: when.toISOString() }, actions: [a] };
       }
 
@@ -433,7 +510,7 @@ export class ToolRegistryService {
         const nba = await this.nba.compute(userId);
         const actions: AgentAction[] = [];
         if (nba?.action) {
-          actions.push(await this.suggest(userId, conversationId, name, nba.action.type, nba.actionLabel === 'Add to Journey' ? nba.title.replace(/ to your journey$/i, ' to Journey') : nba.title, `${nba.reason} ${nba.expectedImpact}`, nba.action.payload));
+          actions.push(await this.suggest(userId, conversationId, name, nba.action.type, nba.kind === 'ADD_SKILL' ? nba.title.replace(/ to your journey$/i, ' to Journey') : nba.title, `${nba.reason} ${nba.expectedImpact}`, nba.action.payload));
         } else if (nba) {
           actions.push(await this.suggest(userId, conversationId, name, 'NAVIGATE', nba.actionLabel, nba.title, { url: nba.actionUrl }));
         }
