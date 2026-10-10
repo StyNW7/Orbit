@@ -65,7 +65,8 @@ function transitionTheme(theme: ThemePreference, origin?: { x: number; y: number
     .then(() => {
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-        { duration: 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', pseudoElement: '::view-transition-new(root)' },
+        // A gentle ease-in-out over ~0.9s keeps the reveal smooth from start to finish.
+        { duration: 900, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
       );
     })
     .catch(() => undefined);

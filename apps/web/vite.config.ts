@@ -1,8 +1,30 @@
-import { defineConfig, type UserConfig } from 'vite';
+import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
+
+/**
+ * Fails the build when two chunks statically import each other. Circular chunks evaluate in the
+ * wrong order in the browser (e.g. "Cannot set properties of undefined (setting 'Activity')").
+ */
+const noCircularChunks: Plugin = {
+  name: 'orbit:no-circular-chunks',
+  apply: 'build',
+  generateBundle(_options, bundle) {
+    const imports = new Map<string, string[]>();
+    for (const file of Object.values(bundle)) if (file.type === 'chunk') imports.set(file.fileName, file.imports);
+    const state = new Map<string, 'visiting' | 'done'>();
+    const visit = (name: string, path: string[]): void => {
+      if (state.get(name) === 'done') return;
+      if (state.get(name) === 'visiting') this.error(`Circular chunk imports: ${[...path.slice(path.indexOf(name)), name].join(' -> ')}`);
+      state.set(name, 'visiting');
+      for (const dep of imports.get(name) ?? []) visit(dep, [...path, name]);
+      state.set(name, 'done');
+    };
+    for (const name of imports.keys()) visit(name, []);
+  },
+};
 
 export default defineConfig(({ command }) => {
   // The monorepo root .env is shared with the API and sets NODE_ENV=development, which Vite would
@@ -15,6 +37,7 @@ const config = {
   // Read VITE_* variables from the monorepo root .env (server secrets are never prefixed with VITE_).
   envDir: '../../',
   plugins: [
+    noCircularChunks,
     react(),
     tailwindcss(),
     VitePWA({
@@ -48,26 +71,14 @@ const config = {
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
+        // Keep vendor groups self-contained: a group that shares CommonJS helpers with `react`
+        // (e.g. Radix) can make the chunks import each other and crash React at startup.
         manualChunks: {
-          react: ['react', 'react-dom', 'react-dom/client', 'react-router'],
+          react: ['react', 'react-dom', 'react-router'],
           graph: ['sigma', 'graphology', 'graphology-layout-forceatlas2', 'graphology-layout'],
           flow: ['@xyflow/react'],
           charts: ['recharts'],
           motion: ['motion'],
-          supabase: ['@supabase/supabase-js'],
-          markdown: ['react-markdown', 'remark-gfm'],
-          radix: [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-progress',
-            '@radix-ui/react-avatar',
-          ],
-          query: ['@tanstack/react-query', 'zustand'],
         },
       },
     },
