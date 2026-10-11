@@ -45,7 +45,7 @@ import { usePageContext, useUiStore } from '@/stores/ui';
 import { useSessionStore } from '@/stores/session';
 import { useT, type MessageKey } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
-import { cn, daysUntil, friendlyDate, greeting, localeDate, round1 } from '@/lib/utils';
+import { cn, daysUntil, formatDate, friendlyDate, greeting, localeDate, round1 } from '@/lib/utils';
 
 export default function MissionControlPage() {
   usePageContext({ page: 'mission-control' });
@@ -63,7 +63,7 @@ export default function MissionControlPage() {
     <div className="space-y-5">
       <FadeIn className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[13px] font-medium text-muted-foreground">{friendlyDate(new Date().toISOString())}</p>
+          <p className="text-[13px] font-medium text-muted-foreground">{formatDate(new Date(), 'EEEE, d MMMM yyyy')}</p>
           <h1 className="mt-1 text-[30px] font-bold leading-tight sm:text-[36px]">
             {greeting()}, {data.firstName}
           </h1>
@@ -90,13 +90,13 @@ export default function MissionControlPage() {
 
       <GettingStarted data={data} />
 
-      <div className="grid gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Readiness */}
         <FadeIn delay={0.05} className="lg:col-span-7">
           <Card className="relative h-full overflow-hidden">
             <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-[radial-gradient(circle,rgba(10,180,106,0.14),transparent_65%)]" aria-hidden />
-            <div className="relative grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:items-center">
-              <ReadinessRing score={data.readiness?.score ?? 0} size={176} />
+            <div className="relative grid grid-cols-1 gap-6 p-6 sm:grid-cols-[auto_1fr] sm:items-center">
+              <ReadinessRing score={data.readiness?.score ?? 0} size={176} className="justify-self-center sm:justify-self-auto" />
               <div className="min-w-0">
                 <CardEyebrow>{t('mission.readiness')}</CardEyebrow>
                 <h2 className="mt-1 text-[24px] font-bold leading-tight">{data.primaryGoal?.role.title ?? t('mission.noTarget')}</h2>
@@ -262,7 +262,7 @@ function GettingStarted({ data }: { data: MissionControlData }) {
             </Tooltip>
           </div>
         </div>
-        <ol className="relative grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
+        <ol className="relative grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
           {steps.map((s, i) => (
             <li key={s.key} className="bg-surface">
               <button
@@ -506,7 +506,7 @@ const UPCOMING_ICON: Record<UpcomingItem['kind'], typeof CalendarDays> = {
 function UpcomingCard({ items }: { items: UpcomingItem[] }) {
   const { t } = useT();
   return (
-    <Card className="h-full p-6">
+    <Card className="flex h-full flex-col p-6">
       <CardEyebrow>{t('mission.upcoming')}</CardEyebrow>
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{t('mission.upcomingEmpty')}</p>
@@ -537,6 +537,20 @@ function UpcomingCard({ items }: { items: UpcomingItem[] }) {
           })}
         </ul>
       )}
+      {items.length < 3 && (
+        <div className="mt-auto pt-4">
+          <Link
+            to="/app/discover?tab=growth"
+            className="flex items-center gap-3 rounded-xl border border-dashed border-border-strong px-3.5 py-3 text-[13px] text-muted-foreground transition hover:border-green hover:bg-muted-green/50 hover:text-foreground"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted-orange text-orange-strong dark:text-orange">
+              <CalendarDays className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">{t('mission.findEvents')}</span>
+            <ArrowRight className="size-4 shrink-0" />
+          </Link>
+        </div>
+      )}
     </Card>
   );
 }
@@ -548,7 +562,7 @@ function MissionSkeleton() {
         <div className="skeleton h-4 w-32" />
         <div className="skeleton h-9 w-72" />
       </div>
-      <div className="grid gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         <CardSkeleton className="h-[240px] lg:col-span-7" lines={5} />
         <CardSkeleton className="h-[240px] lg:col-span-5" lines={4} />
         <CardSkeleton className="h-[220px] lg:col-span-7" />

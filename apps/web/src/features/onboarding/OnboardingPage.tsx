@@ -57,27 +57,64 @@ const ROLE_TO_INTEREST: Record<string, string> = {
   'ux-designer': 'UI/UX',
 };
 
+interface OnboardingDraft {
+  step: number;
+  role: string | null;
+  aspiration: string;
+  cv: CvUploadResult | null;
+  cvText: string;
+  interests: string[];
+  industries: string[];
+  workModes: WorkMode[];
+  locations: string[];
+  roleTypes: OpportunityType[];
+  context: string;
+}
+
+const draftKey = (userId: string | undefined) => `orbit.onboarding.${userId ?? 'anon'}`;
+
+/** A refresh mid-onboarding keeps the answers (per tab, cleared once the analysis succeeds). */
+function readDraft(userId: string | undefined): Partial<OnboardingDraft> {
+  try {
+    const raw = sessionStorage.getItem(draftKey(userId));
+    return raw ? (JSON.parse(raw) as Partial<OnboardingDraft>) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const user = useSessionStore((s) => s.user);
   const { t } = useT();
   const labels = useLabels();
-  const [step, setStep] = useState(0);
+  const [draft] = useState(() => readDraft(user?.id));
+  const [step, setStep] = useState(() => Math.min(4, Math.max(0, draft.step ?? 0)));
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
-  const [role, setRole] = useState<string | null>(null);
-  const [aspiration, setAspiration] = useState('');
-  const [cv, setCv] = useState<CvUploadResult | null>(null);
-  const [cvText, setCvText] = useState('');
-  const [interests, setInterests] = useState<string[]>([]);
-  const [industries, setIndustries] = useState<string[]>([]);
-  const [workModes, setWorkModes] = useState<WorkMode[]>(['HYBRID']);
-  const [locations, setLocations] = useState<string[]>([]);
-  const [roleTypes, setRoleTypes] = useState<OpportunityType[]>(['INTERNSHIP']);
-  const [context, setContext] = useState('');
+  const [role, setRole] = useState<string | null>(draft.role ?? null);
+  const [aspiration, setAspiration] = useState(draft.aspiration ?? '');
+  const [cv, setCv] = useState<CvUploadResult | null>(draft.cv ?? null);
+  const [cvText, setCvText] = useState(draft.cvText ?? '');
+  const [interests, setInterests] = useState<string[]>(draft.interests ?? []);
+  const [industries, setIndustries] = useState<string[]>(draft.industries ?? []);
+  const [workModes, setWorkModes] = useState<WorkMode[]>(draft.workModes ?? ['HYBRID']);
+  const [locations, setLocations] = useState<string[]>(draft.locations ?? []);
+  const [roleTypes, setRoleTypes] = useState<OpportunityType[]>(draft.roleTypes ?? ['INTERNSHIP']);
+  const [context, setContext] = useState(draft.context ?? '');
   const [result, setResult] = useState<AnalyzeProfileResult | null>(null);
   const analyze = useAnalyzeProfile();
+
+  useEffect(() => {
+    if (result) return;
+    const value: OnboardingDraft = { step, role, aspiration, cv, cvText, interests, industries, workModes, locations, roleTypes, context };
+    try {
+      sessionStorage.setItem(draftKey(user?.id), JSON.stringify(value));
+    } catch {
+      // storage unavailable or full — the draft simply isn't kept
+    }
+  }, [user?.id, result, step, role, aspiration, cv, cvText, interests, industries, workModes, locations, roleTypes, context]);
 
   const canContinue = step === 0 ? Boolean(role) : true;
 
@@ -95,7 +132,16 @@ export default function OnboardingPage() {
         preferredRoleTypes: roleTypes,
         additionalContext: additional || undefined,
       },
-      { onSuccess: (r) => setResult(r) },
+      {
+        onSuccess: (r) => {
+          setResult(r);
+          try {
+            sessionStorage.removeItem(draftKey(user?.id));
+          } catch {
+            // nothing to clean up
+          }
+        },
+      },
     );
   };
 
@@ -175,7 +221,7 @@ export default function OnboardingPage() {
                 <p className="mt-2 text-right text-xs text-subtle-foreground tabular">{context.length}/2000</p>
               </StepCard>
             ) : (
-              <AnalyzeStep pending={analyze.isPending} error={analyze.error} onRetry={run} hasCv={Boolean(cv || cvText.trim())} />
+              <AnalyzeStep pending={analyze.isPending} error={analyze.error} onRetry={run} onEdit={() => setStep(4)} hasCv={Boolean(cv || cvText.trim())} />
             )}
           </motion.div>
         </AnimatePresence>
@@ -243,7 +289,7 @@ function DirectionStep({
       {error ? (
         <ErrorState error={error} onRetry={() => void refetch()} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('onb.targetRole')}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('onb.targetRole')}>
           {isLoading && Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />)}
           {roles?.map((r: CareerRoleView) => {
             const Icon = roleIcon(r.icon);
@@ -486,7 +532,7 @@ function PreferencesStep(p: {
 
 const ANALYSIS_LABELS: MessageKey[] = ['onb.analysis.1', 'onb.analysis.2', 'onb.analysis.3', 'onb.analysis.4', 'onb.analysis.5'];
 
-function AnalyzeStep({ pending, error, onRetry, hasCv }: { pending: boolean; error: unknown; onRetry: () => void; hasCv: boolean }) {
+function AnalyzeStep({ pending, error, onRetry, onEdit, hasCv }: { pending: boolean; error: unknown; onRetry: () => void; onEdit: () => void; hasCv: boolean }) {
   const { t } = useT();
   // Walk through the stages while the request runs, so progress feels alive (the API does them in one call).
   const [active, setActive] = useState(0);
@@ -526,9 +572,12 @@ function AnalyzeStep({ pending, error, onRetry, hasCv }: { pending: boolean; err
         })}
       </ul>
       {Boolean(error) && (
-        <Button className="mt-6" onClick={onRetry}>
-          {t('common.tryAgain')}
-        </Button>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <Button variant="ghost" onClick={onEdit}>
+            <ArrowLeft /> {t('onb.editAnswers')}
+          </Button>
+          <Button onClick={onRetry}>{t('common.tryAgain')}</Button>
+        </div>
       )}
     </section>
   );
@@ -548,9 +597,9 @@ function ResultStep({ result, onExplore, onHome }: { result: AnalyzeProfileResul
         <Badge tone="outline">{result.extractionSource === 'AI' ? t('onb.src.ai') : result.extractionSource === 'HEURISTIC' ? t('onb.src.heuristic') : t('onb.src.manual')}</Badge>
       </div>
       <div className="card overflow-hidden">
-        <div className="relative grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
+        <div className="relative grid grid-cols-1 gap-6 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
           <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-[radial-gradient(circle,rgba(10,180,106,0.14),transparent_65%)]" aria-hidden />
-          <ReadinessRing score={intel.readiness?.score ?? 0} size={180} />
+          <ReadinessRing score={intel.readiness?.score ?? 0} size={180} className="justify-self-center sm:justify-self-auto" />
           <div className="relative min-w-0">
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-green-strong dark:text-green">{t('onb.targetRoleEyebrow')}</p>
             <h1 className="mt-1 text-[30px] font-bold leading-tight">{intel.targetRole?.title}</h1>
@@ -564,7 +613,7 @@ function ResultStep({ result, onExplore, onHome }: { result: AnalyzeProfileResul
             </div>
           </div>
         </div>
-        <div className="grid border-t border-border sm:grid-cols-2">
+        <div className="grid grid-cols-1 border-t border-border sm:grid-cols-2">
           <div className="border-b border-border p-6 sm:border-b-0 sm:border-r">
             <p className="mb-3 text-sm font-semibold">{t('onb.strengths')}</p>
             <ul className="space-y-2">

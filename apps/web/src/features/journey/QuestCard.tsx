@@ -22,7 +22,7 @@ import { Checkbox, Select } from '@/components/ui/form-controls';
 import { useCompleteQuest, useQuestTask, useSubmitEvidence, useUpdateQuest, useUploadFile } from '@/hooks/queries';
 import { useUiStore } from '@/stores/ui';
 import { api } from '@/lib/api';
-import { cn, friendlyDate } from '@/lib/utils';
+import { cn, friendlyDate, safeUrl } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
 
@@ -115,8 +115,8 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
                 <div className="mt-4">
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{t('quest.resources')}</p>
                   <div className="flex flex-wrap gap-2">
-                    {quest.resources.map((r) => (
-                      <a key={r.url} href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[12.5px] hover:border-green">
+                    {quest.resources.filter((r) => safeUrl(r.url)).map((r) => (
+                      <a key={r.url} href={safeUrl(r.url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[12.5px] hover:border-green">
                         <ExternalLink className="size-3.5 text-muted-foreground" /> {r.title}
                         <span className="text-subtle-foreground">· {r.kind}</span>
                       </a>
@@ -137,8 +137,8 @@ export function QuestCard({ quest, defaultOpen = false }: { quest: QuestView; de
                         <Badge tone="neutral">{labels.evidence(e.type)}</Badge>
                         <span className="text-xs text-subtle-foreground">{friendlyDate(e.createdAt)}</span>
                       </div>
-                      {e.url && (
-                        <a href={e.url} target="_blank" rel="noreferrer" className="mt-1.5 block truncate text-green-strong underline dark:text-green">
+                      {safeUrl(e.url) && (
+                        <a href={safeUrl(e.url)} target="_blank" rel="noreferrer" className="mt-1.5 block truncate text-green-strong underline dark:text-green">
                           {e.url}
                         </a>
                       )}

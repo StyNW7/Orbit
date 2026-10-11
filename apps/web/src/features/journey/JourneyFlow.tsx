@@ -67,7 +67,9 @@ const MilestoneNode = memo(function MilestoneNode({ data }: NodeProps<Node<Miles
         </div>
         <div className="min-w-0">
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground">{t('journey.milestoneN', { n: data.index + 1 })}</p>
-          <p className="truncate text-[14px] font-semibold leading-tight">{m.title}</p>
+          <p className="line-clamp-2 break-words text-[14px] font-semibold leading-tight" title={m.title}>
+            {m.title}
+          </p>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">
             {tn('journey.questCount', m.quests.length)}
           </p>
@@ -87,7 +89,9 @@ const GoalNode = memo(function GoalNode({ data }: NodeProps<Node<{ title: string
       </span>
       <div className="min-w-0">
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/75">{t('journey.jobReady')}</p>
-        <p className="truncate text-[14px] font-bold leading-tight">{data.title}</p>
+        <p className="line-clamp-2 break-words text-[14px] font-bold leading-tight" title={data.title}>
+          {data.title}
+        </p>
         {data.readiness !== null && <p className="text-[11.5px] text-white/85">{t('journey.todayPct', { score: Math.round(data.readiness) })}</p>}
       </div>
     </div>
@@ -188,8 +192,10 @@ export function JourneyFlow({
         nodesConnectable={false}
         nodesDraggable={false}
         elementsSelectable
-        panOnScroll
+        // Wheel and touch scrolling stay with the page; drag pans the roadmap.
+        panOnScroll={false}
         zoomOnScroll={false}
+        preventScrolling={false}
         proOptions={{ hideAttribution: true }}
         aria-label={t('journey.roadmapLabel')}
       >

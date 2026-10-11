@@ -168,7 +168,7 @@ export default function LandingPage() {
       <section className="relative">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(ellipse_70%_60%_at_70%_20%,rgba(10,180,106,0.14),transparent_60%),radial-gradient(ellipse_50%_40%_at_95%_50%,rgba(251,144,2,0.11),transparent_60%)]" aria-hidden />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] opacity-50 grid-dots [mask-image:radial-gradient(ellipse_60%_55%_at_50%_30%,black,transparent)]" aria-hidden />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-20">
+        <div className="relative mx-auto grid grid-cols-1 max-w-[1200px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-20">
           <div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <Badge tone="green" className="rounded-full px-3 py-1 text-[12.5px]">
@@ -259,7 +259,7 @@ export default function LandingPage() {
       <section className="border-y border-border bg-surface py-20 sm:py-24">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow={t('landing.problem.eyebrow')} title={t('landing.problem.title')} description={t('landing.problem.desc')} />
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {(
               [
                 { icon: CircleHelp, q: 'landing.problem.q1', a: 'landing.problem.a1' },
@@ -290,7 +290,7 @@ export default function LandingPage() {
       <section id="how" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow={t('landing.how.eyebrow')} title={t('landing.how.title')} description={t('landing.how.desc')} />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(
               [
                 { icon: Dna, k: 's1' },
@@ -321,7 +321,7 @@ export default function LandingPage() {
       {/* Universe preview */}
       <section id="universe" className="relative scroll-mt-20 overflow-hidden bg-[#0d1512] py-20 text-white sm:py-28">
         <div className="pointer-events-none absolute -left-32 top-10 size-[420px] rounded-full bg-[#0AB46A]/15 blur-[110px]" aria-hidden />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
+        <div className="relative mx-auto grid grid-cols-1 max-w-[1200px] items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
           <Reveal>
             <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-[#5fe0a0]">{t('landing.universe.eyebrow')}</p>
             <h2 className="mt-3 text-[32px] font-bold leading-[1.15] text-white sm:text-[42px]">{t('landing.universe.title')}</h2>
@@ -347,7 +347,7 @@ export default function LandingPage() {
       <section id="capabilities" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow={t('landing.cap.eyebrow')} title={t('landing.cap.title')} description={t('landing.cap.desc')} />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {(
               [
                 { icon: Dna, k: 'c1', tone: 'green' },
@@ -385,7 +385,7 @@ export default function LandingPage() {
 
       {/* Journey + Opportunity */}
       <section className="border-y border-border bg-surface py-20 sm:py-28">
-        <div className="mx-auto grid max-w-[1200px] gap-6 px-4 sm:px-6 lg:grid-cols-2">
+        <div className="mx-auto grid grid-cols-1 max-w-[1200px] gap-6 px-4 sm:px-6 lg:grid-cols-2">
           <Reveal>
             <div className="card h-full p-6 sm:p-8">
               <Badge tone="green">
@@ -446,7 +446,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-5 grid gap-3 text-[13.5px] sm:grid-cols-2">
+              <div className="mt-5 grid grid-cols-1 gap-3 text-[13.5px] sm:grid-cols-2">
                 <div className="rounded-xl bg-muted-green/60 p-3">
                   <p className="font-semibold">{t('landing.opp.why')}</p>
                   <p className="text-muted-foreground">{t('landing.opp.whyList')}</p>
@@ -465,7 +465,7 @@ export default function LandingPage() {
       <section id="agent" className="scroll-mt-20 py-20 sm:py-28">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow={t('landing.agent.eyebrow')} title={t('landing.agent.title')} description={t('landing.agent.desc')} />
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
             <Reveal>
               <div className="card p-5 sm:p-6">
                 <div className="flex justify-end">
@@ -545,7 +545,7 @@ export default function LandingPage() {
       <section className="border-y border-border bg-surface py-20 sm:py-24">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
           <SectionHead eyebrow={t('landing.start.eyebrow')} title={t('landing.start.title')} />
-          <ol className="relative grid gap-4 md:grid-cols-3">
+          <ol className="relative grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="pointer-events-none absolute left-[16%] right-[16%] top-[42px] hidden h-px border-t-2 border-dashed border-border-strong md:block" aria-hidden />
             {(
               [

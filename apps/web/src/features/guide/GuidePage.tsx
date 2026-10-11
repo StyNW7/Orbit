@@ -72,7 +72,7 @@ export default function GuidePage() {
           <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-[radial-gradient(circle,rgba(10,180,106,0.14),transparent_65%)]" aria-hidden />
           <CardEyebrow>{t('guide.loopTitle')}</CardEyebrow>
           <p className="relative mt-2 max-w-2xl text-[14.5px] text-muted-foreground">{t('guide.loopDesc')}</p>
-          <ol className="relative mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="relative mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {LOOP.map((s, i) => (
               <li key={s.key} className="relative flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
                 <span className="orbit-gradient flex size-10 shrink-0 items-center justify-center rounded-xl text-white">
@@ -90,7 +90,7 @@ export default function GuidePage() {
       </FadeIn>
 
       {/* Areas */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {AREAS.map((a, i) => (
           <FadeIn key={a.to} delay={0.04 * i}>
             <Card className="flex h-full flex-col p-6 transition hover:-translate-y-0.5 hover:shadow-pop">
@@ -127,7 +127,7 @@ export default function GuidePage() {
         </FadeIn>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Readiness formula */}
         <FadeIn>
           <Card className="h-full p-6">

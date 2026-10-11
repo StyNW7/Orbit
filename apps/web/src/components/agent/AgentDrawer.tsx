@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AnimatePresence, motion } from 'motion/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -96,6 +97,14 @@ export function AgentDrawer() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length, chat.isPending]);
 
+  // The composer grows with multi-line questions (Shift+Enter) up to its max height.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input, open]);
+
   const newChat = () => {
     setMessages([]);
     setConversationId(undefined);
@@ -103,9 +112,15 @@ export function AgentDrawer() {
   };
 
   const openConversation = async (id: string) => {
-    const msgs = await loadConversation(id);
-    setConversationId(id);
-    setMessages(msgs);
+    // Switching mid-answer would attach the pending reply to the wrong conversation.
+    if (chat.isPending) return;
+    try {
+      const msgs = await loadConversation(id);
+      setConversationId(id);
+      setMessages(msgs);
+    } catch (e) {
+      toast.error(t('agent.loadFailed'), { description: errorMessage(e) });
+    }
   };
 
   const engine = status?.activeEngine;
@@ -145,7 +160,7 @@ export function AgentDrawer() {
                 <DropdownMenuLabel>{t('agent.recent')}</DropdownMenuLabel>
                 {conversations.length === 0 && <p className="px-2.5 py-2 text-sm text-muted-foreground">{t('agent.noConversations')}</p>}
                 {conversations.slice(0, 8).map((c) => (
-                  <DropdownMenuItem key={c.id} onSelect={() => void openConversation(c.id)}>
+                  <DropdownMenuItem key={c.id} disabled={chat.isPending} onSelect={() => void openConversation(c.id)}>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>
                     <span className="shrink-0 text-xs text-subtle-foreground">{relative(c.updatedAt)}</span>
                   </DropdownMenuItem>
@@ -153,7 +168,7 @@ export function AgentDrawer() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Tooltip content={t('agent.newChat')}>
-              <Button variant="ghost" size="icon-sm" onClick={newChat} aria-label={t('agent.newChat')}>
+              <Button variant="ghost" size="icon-sm" onClick={newChat} disabled={chat.isPending} aria-label={t('agent.newChat')}>
                 <MessageSquarePlus />
               </Button>
             </Tooltip>
@@ -260,6 +275,11 @@ function Welcome({ page, onPick }: { page: AgentPageContext['page']; onPick: (s:
   );
 }
 
+/** Links in answers open in a new tab so the conversation (and the app) stays where it is. */
+const MARKDOWN_COMPONENTS: Components = {
+  a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+};
+
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
@@ -277,7 +297,9 @@ function AssistantMessage({ message }: { message: ChatMessage }) {
       <div className="min-w-0 flex-1">
         <div className="rounded-2xl rounded-tl-md border border-border bg-surface px-4 py-3 shadow-card">
           <div className="prose-orbit overflow-x-auto">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+              {message.content}
+            </ReactMarkdown>
           </div>
         </div>
         {message.toolCalls.length > 0 && (

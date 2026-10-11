@@ -47,6 +47,9 @@ import { LOCALES, useI18nStore, useT } from '@/lib/i18n';
 import { signOut } from '@/lib/auth';
 import { centerOf, cn, relative } from '@/lib/utils';
 
+// Apple keyboards show ⌘ for the command-palette shortcut; everyone else sees Ctrl.
+const MOD_KEY = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
+
 export function AppShell() {
   const location = useLocation();
   const setCommandOpen = useUiStore((s) => s.setCommandOpen);
@@ -191,13 +194,13 @@ function Header() {
         <button
           type="button"
           onClick={() => setCommandOpen(true)}
-          className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border bg-surface px-3 text-left text-sm text-subtle-foreground shadow-[0_1px_2px_rgba(16,23,20,0.04)] transition hover:border-border-strong sm:max-w-[420px]"
+          className="flex size-10 shrink-0 items-center justify-center gap-2.5 rounded-xl border border-border bg-surface text-left text-sm text-subtle-foreground shadow-[0_1px_2px_rgba(16,23,20,0.04)] transition hover:border-border-strong sm:h-10 sm:w-auto sm:min-w-0 sm:max-w-[420px] sm:flex-1 sm:shrink sm:justify-start sm:px-3"
           aria-label={t('shell.searchLabel')}
         >
           <Search className="size-4 shrink-0" />
-          <span className="truncate">{t('shell.search')}</span>
+          <span className="hidden truncate sm:inline">{t('shell.search')}</span>
           <span className="ml-auto hidden items-center gap-1 sm:flex">
-            <Kbd>Ctrl</Kbd>
+            <Kbd>{MOD_KEY}</Kbd>
             <Kbd>K</Kbd>
           </span>
         </button>

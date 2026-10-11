@@ -28,7 +28,7 @@ export function OrbitsView() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.goals.map((row) => {
           const Icon = roleIcon(row.goal.role.icon);
           return (

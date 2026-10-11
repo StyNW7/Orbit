@@ -7,7 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { normalizeTerm } from '@orbit/shared';
-import { inferRoles, inferSkills, stripHtml } from '../opportunities/job-providers';
+import { httpUrl, inferRoles, inferSkills, stripHtml } from '../opportunities/job-providers';
 
 export interface NormalizedBook {
   source: string;
@@ -87,10 +87,10 @@ export class GoogleBooksProvider implements BookProvider {
           title: v.subtitle ? `${v.title}: ${v.subtitle}` : v.title,
           authors: v.authors ?? [],
           description: description.slice(0, 1500),
-          coverUrl: v.imageLinks?.thumbnail?.replace('http://', 'https://') ?? null,
+          coverUrl: httpUrl(v.imageLinks?.thumbnail?.replace('http://', 'https://')),
           publishedYear: v.publishedDate ? Number(String(v.publishedDate).slice(0, 4)) || null : null,
           pageCount: v.pageCount ?? null,
-          infoUrl: v.infoLink ?? null,
+          infoUrl: httpUrl(v.infoLink),
           skills: inferSkills(`${v.title} ${description} ${(v.categories ?? []).join(' ')}`),
           roleSlugs: inferRoles(v.title, description),
         } satisfies NormalizedBook;
@@ -156,7 +156,7 @@ export class OpenAlexProvider implements PaperProvider {
         year: w.publication_year ?? null,
         venue: w.primary_location?.source?.display_name ?? null,
         abstract,
-        url: w.doi ?? w.primary_location?.landing_page_url ?? w.id,
+        url: httpUrl(w.doi) ?? httpUrl(w.primary_location?.landing_page_url) ?? httpUrl(w.id),
         doi: w.doi ?? null,
         citationCount: w.cited_by_count ?? null,
         skills: inferSkills(`${title} ${abstract}`),
@@ -185,7 +185,7 @@ export class SemanticScholarProvider implements PaperProvider {
         year: p.year ?? null,
         venue: p.venue || null,
         abstract: String(p.abstract).slice(0, 2000),
-        url: p.url ?? null,
+        url: httpUrl(p.url),
         doi: p.externalIds?.DOI ? `https://doi.org/${p.externalIds.DOI}` : null,
         citationCount: p.citationCount ?? null,
         skills: inferSkills(`${p.title} ${p.abstract}`),

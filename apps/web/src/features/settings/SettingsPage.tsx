@@ -28,7 +28,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       <PageHeader eyebrow={t('settings.eyebrow')} title={t('settings.title')} description={t('settings.desc')} />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className="p-6">
           <SectionTitle icon={ShieldCheck} title={t('settings.account')} />
           <dl className="space-y-2 text-[14px]">
@@ -122,7 +122,7 @@ export default function SettingsPage() {
             }
           />
           {status ? (
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
               <StatusTile icon={Workflow} title={t('settings.engine')} value={labels.engine(status.activeEngine)} ok detail={status.activeEngine === 'planner' ? t('settings.enginePlanner') : t('settings.engineModel')} />
               <StatusTile
                 icon={Workflow}

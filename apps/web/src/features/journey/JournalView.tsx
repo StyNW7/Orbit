@@ -34,7 +34,7 @@ export function JournalView() {
     );
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div className="space-y-4">
         {patterns.map((p) => (
           <div key={p.id} className="rounded-xl border border-orange/40 bg-muted-orange/60 p-5">

@@ -228,7 +228,7 @@ export class ProgressService {
         id: `exp-${e.id}`,
         date: e.startDate.toISOString(),
         type: 'EXPERIENCE',
-        title: `Started ${e.title}`,
+        title: L(`Started ${e.title}`, `Memulai ${e.title}`),
         description: e.organization,
         xp: 0,
       });

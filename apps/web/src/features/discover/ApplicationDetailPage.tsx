@@ -10,7 +10,7 @@ import { CardSkeleton, ErrorState, ScoreBar } from '@/components/common/states';
 import { MatchChip } from '@/components/common/MatchChip';
 import { useApplication, useInterviewMutations, useRemoveApplication, useUpdateApplication } from '@/hooks/queries';
 import { usePageContext, useUiStore } from '@/stores/ui';
-import { cn, daysUntil, friendlyDate } from '@/lib/utils';
+import { cn, daysUntil, friendlyDate, safeUrl } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
 
@@ -70,9 +70,9 @@ function Detail({ app }: { app: ApplicationDetail }) {
             <Button variant="secondary" asChild>
               <Link to={`/app/discover/jobs/${app.opportunity.id}`}>{t('common.viewMatch')}</Link>
             </Button>
-            {app.opportunity.applyUrl && (
+            {safeUrl(app.opportunity.applyUrl) && (
               <Button variant="secondary" asChild>
-                <a href={app.opportunity.applyUrl} target="_blank" rel="noreferrer">
+                <a href={safeUrl(app.opportunity.applyUrl)} target="_blank" rel="noreferrer">
                   <ExternalLink /> {t('apps.apply')}
                 </a>
               </Button>
@@ -118,7 +118,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
         </ol>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           <Card className="p-6">
             <div className="flex items-center justify-between">
@@ -313,7 +313,7 @@ function PastSession({ session }: { session: InterviewSessionView }) {
         <Badge tone="outline">{t('apps.coaching')}</Badge>
       </div>
       {s && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <ScoreBar label={t('apps.score.communication')} value={s.communication} />
           <ScoreBar label={t('apps.score.structure')} value={s.structure} />
           <ScoreBar label={t('apps.score.roleKnowledge')} value={s.roleKnowledge} tone={s.roleKnowledge < 55 ? 'orange' : 'green'} />

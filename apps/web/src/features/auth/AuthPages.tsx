@@ -9,7 +9,7 @@ import { Logo } from '@/components/brand/brand';
 import { OrbitSystem } from '@/features/landing/OrbitSystem';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/primitives';
-import { DEMO_CREDENTIALS, authMode, signIn, signUp } from '@/lib/auth';
+import { AuthFailure, DEMO_CREDENTIALS, authMode, signIn, signUp } from '@/lib/auth';
 import { queryClient } from '@/hooks/queries';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { LanguageToggle } from '@/components/common/LanguageToggle';
@@ -18,7 +18,7 @@ import { useT, type MessageKey } from '@/lib/i18n';
 function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   const { t } = useT();
   return (
-    <div className="grid min-h-dvh bg-background lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid grid-cols-1 min-h-dvh bg-background lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative hidden overflow-hidden bg-[#0d1512] lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="absolute inset-0 opacity-[0.35] grid-dots" aria-hidden />
         <div className="absolute -left-40 -top-40 size-[520px] rounded-full bg-[#0AB46A]/25 blur-[120px]" aria-hidden />
@@ -141,7 +141,9 @@ export function SignInPage() {
       await signIn(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password);
       finish();
     } catch (e) {
-      setError(`${(e as Error).message} ${t('auth.demoHint')}`);
+      // The seed hint only helps when the demo account is genuinely missing.
+      const missing = e instanceof AuthFailure && e.code === 'INVALID_CREDENTIALS';
+      setError(missing ? `${(e as Error).message} ${t('auth.demoHint')}` : (e as Error).message);
     } finally {
       setDemoLoading(false);
     }

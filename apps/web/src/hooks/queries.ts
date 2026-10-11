@@ -117,7 +117,11 @@ export function useAnalyzeProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: AnalyzeProfileInput) => api.post<AnalyzeProfileResult>('/profile/analyze', input as unknown as Record<string, unknown>),
-    onSuccess: () => invalidateCareer(qc),
+    onSuccess: () => {
+      // Mark onboarding done right away so the route guard never bounces the user back while `me` refetches.
+      qc.setQueryData<MeResponse>(['me'], (me) => (me ? { ...me, onboardingCompleted: true } : me));
+      invalidateCareer(qc);
+    },
   });
 }
 
@@ -570,7 +574,12 @@ export const useAgentStatus = () => useQuery({ queryKey: ['agent-status'], query
 export const useConversations = (enabled: boolean) => useQuery({ queryKey: ['conversations'], queryFn: () => api.get<AgentConversationView[]>('/agent/conversations'), enabled });
 
 export function useAgentChat() {
-  return useMutation({ mutationFn: (input: AgentChatInput) => api.post<AgentChatResponse>('/agent/chat', input as unknown as Record<string, unknown>) });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AgentChatInput) => api.post<AgentChatResponse>('/agent/chat', input as unknown as Record<string, unknown>),
+    // A new or continued conversation moves to the top of the history list.
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['conversations'] }),
+  });
 }
 
 export function loadConversation(id: string) {
@@ -588,7 +597,10 @@ export function useAgentAction() {
       },
       onError: (e) => toast.error(tr('toast.actionFailed'), { description: errorMessage(e) }),
     }),
-    reject: useMutation({ mutationFn: (id: string) => api.post(`/agent/actions/${id}/reject`) }),
+    reject: useMutation({
+      mutationFn: (id: string) => api.post(`/agent/actions/${id}/reject`),
+      onError: (e) => toast.error(tr('toast.actionFailed'), { description: errorMessage(e) }),
+    }),
   };
 }
 

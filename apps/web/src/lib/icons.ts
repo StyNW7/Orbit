@@ -33,20 +33,23 @@ export const ROLE_ICONS: Record<string, LucideIcon> = {
 
 export const roleIcon = (name: string | undefined): LucideIcon => (name && ROLE_ICONS[name]) || BriefcaseBusiness;
 
-/** Career Universe node palette — green = what you have, orange = what is ahead. */
+/**
+ * Career Universe node palette — green/teal = what you have, orange/amber = what is ahead,
+ * blue = knowledge, violet = people. Every type keeps a distinct hue so the legend stays readable.
+ */
 export const NODE_STYLE: Record<NodeType, { color: string; icon: LucideIcon }> = {
   USER: { color: '#0AB46A', icon: UserRound },
   CAREER_ROLE: { color: '#15201B', icon: Target },
-  GOAL: { color: '#088F54', icon: Flag },
-  QUEST: { color: '#51C868', icon: Route },
-  SKILL: { color: '#0AB46A', icon: Sparkles },
-  GAP: { color: '#FB9002', icon: Target },
+  GOAL: { color: '#05603A', icon: Flag },
+  QUEST: { color: '#14B8A6', icon: Route },
+  SKILL: { color: '#5CC98A', icon: Sparkles },
+  GAP: { color: '#EF5A2A', icon: Target },
   EXPERIENCE: { color: '#5E7A70', icon: BriefcaseBusiness },
   PROJECT: { color: '#4F6B61', icon: FolderKanban },
   COMPETITION: { color: '#6C8A7F', icon: Trophy },
   CERTIFICATION: { color: '#7C968C', icon: Medal },
-  OPPORTUNITY: { color: '#F59E0B', icon: BriefcaseBusiness },
-  EVENT: { color: '#FDBA4D', icon: CalendarDays },
+  OPPORTUNITY: { color: '#FB9002', icon: BriefcaseBusiness },
+  EVENT: { color: '#E3B008', icon: CalendarDays },
   COURSE: { color: '#3E7CB1', icon: GraduationCap },
   BOOK: { color: '#5B8FC7', icon: BookOpen },
   PAPER: { color: '#7AA5D6', icon: FileText },
@@ -57,7 +60,11 @@ export const NODE_STYLE: Record<NodeType, { color: string; icon: LucideIcon }> =
 /** Dark-canvas overrides: near-black and slate tones are lifted so every node stays visible. */
 const DARK_NODE_COLOR: Partial<Record<NodeType, string>> = {
   CAREER_ROLE: '#E8EFEB',
-  GOAL: '#2FCB86',
+  GOAL: '#A7EBC6',
+  QUEST: '#2DD4BF',
+  SKILL: '#4ADE80',
+  GAP: '#FF7043',
+  EVENT: '#FACC15',
   EXPERIENCE: '#8FA79E',
   PROJECT: '#7F9A90',
   COMPETITION: '#A3BBB1',

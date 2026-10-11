@@ -71,6 +71,17 @@ export function pluralize(n: number, word: string, plural = `${word}s`) {
   return `${n} ${n === 1 ? word : plural}`;
 }
 
+/** External links only ever open http(s) URLs — data from third-party feeds is never trusted as-is. */
+export function safeUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }

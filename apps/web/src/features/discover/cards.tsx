@@ -40,7 +40,7 @@ import {
   useSkillsCatalog,
   useUpdateSaved,
 } from '@/hooks/queries';
-import { cn, daysUntil, friendlyDate } from '@/lib/utils';
+import { cn, daysUntil, friendlyDate, safeUrl } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
 
@@ -236,9 +236,9 @@ export function GrowthCard({ item, highlight }: { item: GrowthItemView; highligh
           <Bell /> {t('card.remind')}
         </Button>
         <AddGapButton gap={item.why.addressesGap} />
-        {item.url && (
+        {safeUrl(item.url) && (
           <Button size="sm" variant="ghost" asChild>
-            <a href={item.url} target="_blank" rel="noreferrer">
+            <a href={safeUrl(item.url)} target="_blank" rel="noreferrer">
               <ExternalLink /> {t('common.open')}
             </a>
           </Button>
@@ -297,9 +297,9 @@ export function BookCard({ book, highlight }: { book: BookView; highlight?: bool
             </Button>
           )}
           <AddGapButton gap={book.why.addressesGap} />
-          {book.infoUrl && (
+          {safeUrl(book.infoUrl) && (
             <Button size="sm" variant="ghost" asChild>
-              <a href={book.infoUrl} target="_blank" rel="noreferrer">
+              <a href={safeUrl(book.infoUrl)} target="_blank" rel="noreferrer">
                 <ExternalLink /> {t('card.details')}
               </a>
             </Button>
@@ -383,9 +383,9 @@ export function PaperCard({ paper, highlight }: { paper: PaperView; highlight?: 
             <BookmarkPlus /> {t('common.save')}
           </Button>
         )}
-        {paper.url && (
+        {safeUrl(paper.url) && (
           <Button size="sm" variant="ghost" asChild>
-            <a href={paper.url} target="_blank" rel="noreferrer">
+            <a href={safeUrl(paper.url)} target="_blank" rel="noreferrer">
               <ExternalLink /> {t('card.details')}
             </a>
           </Button>
@@ -436,7 +436,7 @@ export function PersonCard({ person, highlight }: { person: PersonView; highligh
           ))}
         </ol>
       )}
-      <div className="mt-4 grid gap-3 rounded-xl bg-surface-2/70 p-3.5 text-[12.5px] sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl bg-surface-2/70 p-3.5 text-[12.5px] sm:grid-cols-2">
         <Compare title={t('card.similarities')} items={c.similarities} tone="green" />
         <Compare title={t('card.differences')} items={c.differences} tone="orange" />
         <div className="sm:col-span-2">
@@ -459,9 +459,9 @@ export function PersonCard({ person, highlight }: { person: PersonView; highligh
             <BookmarkPlus /> {person.kind === 'MENTOR' ? t('card.saveMentor') : t('card.followPath')}
           </Button>
         )}
-        {person.publicSources.map((s) => (
+        {person.publicSources.filter((s) => safeUrl(s.url)).map((s) => (
           <Button key={s.url} size="sm" variant="ghost" asChild>
-            <a href={s.url} target="_blank" rel="noreferrer">
+            <a href={safeUrl(s.url)} target="_blank" rel="noreferrer">
               <ExternalLink /> {s.label}
             </a>
           </Button>

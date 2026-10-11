@@ -7,7 +7,7 @@ import { Badge, Card, CardEyebrow } from '@/components/ui/primitives';
 import { CardSkeleton, ErrorState, ScoreBar } from '@/components/common/states';
 import { useAddSkillToJourney, useJob, useSaveJob } from '@/hooks/queries';
 import { usePageContext, useUiStore } from '@/stores/ui';
-import { daysUntil, friendlyDate } from '@/lib/utils';
+import { daysUntil, friendlyDate, safeUrl } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
 
@@ -33,7 +33,7 @@ export default function JobDetailPage() {
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
         <ArrowLeft /> {t('common.back')}
       </Button>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
           <Card className="p-6">
             <div className="flex items-start gap-4">
@@ -72,10 +72,10 @@ export default function JobDetailPage() {
               <Button variant="secondary" onClick={() => openAgent(t('agent.prompt.readyApply'))}>
                 <BrainCircuit /> {t('job.readyQ')}
               </Button>
-              {o.applyUrl && (
+              {safeUrl(o.applyUrl) && (
                 <Button variant="ghost" asChild>
-                  <a href={o.applyUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink /> {t('job.applyOn', { host: hostOf(o.applyUrl) })}
+                  <a href={safeUrl(o.applyUrl)} target="_blank" rel="noreferrer">
+                    <ExternalLink /> {t('job.applyOn', { host: hostOf(o.applyUrl!) })}
                   </a>
                 </Button>
               )}

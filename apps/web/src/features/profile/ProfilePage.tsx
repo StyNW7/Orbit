@@ -42,7 +42,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useT } from '@/lib/i18n';
 import { useLabels } from '@/lib/i18n/labels';
-import { localeDate } from '@/lib/utils';
+import { localeDate, safeUrl } from '@/lib/utils';
 
 export default function ProfilePage() {
   usePageContext({ page: 'profile' });
@@ -64,8 +64,8 @@ function ProfileBody({ p, intel }: { p: ProfileDetail; intel: CareerIntelligence
 
       {/* Career DNA */}
       <Card className="overflow-hidden">
-        <div className="grid gap-6 p-6 md:grid-cols-[auto_1fr_auto] md:items-center">
-          <ReadinessRing score={intel.readiness?.score ?? 0} size={164} />
+        <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[auto_1fr_auto] md:items-center">
+          <ReadinessRing score={intel.readiness?.score ?? 0} size={164} className="justify-self-center md:justify-self-auto" />
           <div className="min-w-0">
             <CardEyebrow className="flex items-center gap-1.5">
               <Dna className="size-3.5 text-green" /> {t('profile.dna')}
@@ -89,7 +89,7 @@ function ProfileBody({ p, intel }: { p: ProfileDetail; intel: CareerIntelligence
             <p className="text-muted-foreground">{intel.preferences.industries.map((i) => labels.industry(i)).join(', ') || t('profile.anyIndustry')}</p>
           </div>
         </div>
-        <div className="grid border-t border-border md:grid-cols-2">
+        <div className="grid grid-cols-1 border-t border-border md:grid-cols-2">
           <div className="border-b border-border p-6 md:border-b-0 md:border-r">
             <p className="mb-3 text-sm font-semibold">{t('profile.strengths')}</p>
             <ul className="space-y-2.5">
@@ -133,7 +133,7 @@ function ProfileBody({ p, intel }: { p: ProfileDetail; intel: CareerIntelligence
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
           <ExperiencesCard p={p} />
           <SkillsCard p={p} />
@@ -194,7 +194,7 @@ function ExperiencesCard({ p }: { p: ProfileDetail }) {
               <Label>{t('profile.type')}</Label>
               <Select className="mt-1.5" value={form.type} onValueChange={(v) => setForm({ ...form, type: v as ExperienceType })} options={EXPERIENCE_TYPES.map((et) => ({ value: et, label: labels.expType(et) }))} label={t('profile.expType')} />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="ex-title">{t('profile.expTitle')}</Label>
                 <Input id="ex-title" className="mt-1.5" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -264,7 +264,7 @@ function SkillsCard({ p }: { p: ProfileDetail }) {
     <Card className="p-6">
       <SectionTitle icon={GraduationCap} title={t('profile.skills')} action={<Button size="sm" variant="secondary" onClick={() => setOpen(true)}><Plus /> {t('common.add')}</Button>} />
       <p className="-mt-1 mb-4 text-[12.5px] text-muted-foreground">{t('profile.skillsNote')}</p>
-      <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
         {p.skills.map((s) => (
           <li key={s.id} className="group">
             <div className="flex items-center justify-between gap-2 text-[13.5px]">
@@ -435,9 +435,9 @@ function LinksCard({ p }: { p: ProfileDetail }) {
         {links.map((l) => (
           <li key={l.label} className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">{l.label}</span>
-            {l.url ? (
-              <a href={l.url} target="_blank" rel="noreferrer" className="truncate font-medium text-green-strong hover:underline dark:text-green">
-                {l.url.replace(/^https?:\/\/(www\.)?/, '')}
+            {safeUrl(l.url) ? (
+              <a href={safeUrl(l.url)} target="_blank" rel="noreferrer" className="truncate font-medium text-green-strong hover:underline dark:text-green">
+                {l.url!.replace(/^https?:\/\/(www\.)?/, '')}
               </a>
             ) : (
               <span className="text-subtle-foreground">{t('profile.notAdded')}</span>
@@ -469,7 +469,7 @@ function EditProfileDialog({ p, open, onOpenChange }: { p: ProfileDetail; open: 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent title={t('profile.editTitle')} className="max-w-xl">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label htmlFor="pf-name">{t('profile.name')}</Label>
             <Input id="pf-name" className="mt-1.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

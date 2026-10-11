@@ -115,6 +115,17 @@ function finalize(job: Omit<NormalizedJob, 'skills' | 'roleSlugs' | 'seniority'>
   };
 }
 
+/** Third-party feeds are untrusted: only http(s) links are stored and later rendered as hrefs. */
+export function httpUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getJson(url: string, timeoutMs = 12_000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -201,7 +212,7 @@ export class RemotiveJobProvider implements JobProvider {
             workMode: 'REMOTE',
             employmentType: inferEmploymentType(j.title, j.job_type),
             industry: 'Technology',
-            applyUrl: j.url ?? null,
+            applyUrl: httpUrl(j.url),
             salaryRange: j.salary || null,
             publishedAt: j.publication_date ? new Date(j.publication_date) : null,
             expiresAt: null,
@@ -237,7 +248,7 @@ export class ArbeitnowJobProvider implements JobProvider {
           workMode: j.remote ? 'REMOTE' : 'ONSITE',
           employmentType: inferEmploymentType(j.title, (j.job_types ?? []).join(' ')),
           industry: 'Technology',
-          applyUrl: j.url ?? null,
+          applyUrl: httpUrl(j.url),
           salaryRange: null,
           publishedAt: j.created_at ? new Date(j.created_at * 1000) : null,
           expiresAt: null,
@@ -280,7 +291,7 @@ export class WeWorkRemotelyProvider implements JobProvider {
             workMode: 'REMOTE',
             employmentType: inferEmploymentType(title, String(item.type ?? '')),
             industry: 'Technology',
-            applyUrl: item.link ? String(item.link) : null,
+            applyUrl: httpUrl(item.link),
             salaryRange: null,
             publishedAt: item.pubDate ? new Date(item.pubDate) : null,
             expiresAt: null,

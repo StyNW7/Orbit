@@ -140,7 +140,9 @@ export function StatTile({ icon: Icon, label, value, hint, tone = 'green' }: { i
       </div>
       <div className="min-w-0">
         <div className="font-display text-[22px] font-bold leading-none tabular">{value}</div>
-        <div className="mt-1 truncate text-[12.5px] text-muted-foreground">{label}</div>
+        <div className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground" title={label}>
+          {label}
+        </div>
         {hint && <div className="truncate text-[11.5px] text-subtle-foreground">{hint}</div>}
       </div>
     </div>

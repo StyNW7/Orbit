@@ -53,7 +53,7 @@ export default function ProgressPage() {
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
   if (isLoading || !data) {
     return (
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <CardSkeleton className="h-[320px] lg:col-span-2" lines={6} />
         <CardSkeleton className="h-[320px]" lines={6} />
       </div>
@@ -96,8 +96,8 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
         description={data.readiness ? t('progress.desc', { role: data.readiness.roleTitle }) : undefined}
       />
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="p-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <Card className="flex flex-col p-6 lg:col-span-2">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <CardEyebrow>{t('progress.history')}</CardEyebrow>
@@ -112,7 +112,7 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
               </Badge>
             )}
           </div>
-          <div className="mt-4 h-[260px]">
+          <div className="mt-4 h-[260px] lg:h-auto lg:min-h-[260px] lg:flex-1">
             {chart.length > 1 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chart} margin={{ top: 10, right: 8, left: -18, bottom: 0 }}>
@@ -171,7 +171,7 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
         <StatTile icon={Award} label={t('progress.stat.offers')} value={data.stats.offers} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="p-6">
           <CardEyebrow>{t('progress.level')}</CardEyebrow>
           <div className="mt-3 flex items-center gap-4">
@@ -266,12 +266,12 @@ function ProgressBody({ data }: { data: ProgressSummary }) {
             {grouped.map(([month, items]) => (
               <div key={month}>
                 <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-green-strong dark:text-green">{month}</p>
-                <ol className="relative space-y-3 border-l border-border pl-5">
+                <ol className="relative ml-2.5 space-y-3 border-l border-border pl-5">
                   {items.map((item) => {
                     const Icon = TIMELINE_ICON[item.type] ?? Sparkles;
                     return (
                       <li key={item.id} className="relative">
-                        <span className="absolute -left-[31px] top-0 flex size-5 items-center justify-center rounded-full border border-border bg-surface">
+                        <span className="absolute -left-[30.5px] top-0 flex size-5 items-center justify-center rounded-full border border-border bg-surface">
                           <Icon className="size-3 text-green" />
                         </span>
                         <p className="text-[13.5px] font-medium leading-snug">{item.title}</p>

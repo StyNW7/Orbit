@@ -69,7 +69,7 @@ export default function ApplicationsPage() {
           {closed.length > 0 && (
             <div className="mt-6">
               <h2 className="mb-2 text-[14px] font-semibold text-muted-foreground">{t('apps.closed')}</h2>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {closed.map((a) => (
                   <AppCard key={a.id} app={a} />
                 ))}

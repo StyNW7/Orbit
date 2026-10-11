@@ -19,6 +19,9 @@ export class ApiError extends Error {
 
 type Body = Record<string, unknown> | unknown[] | FormData | undefined;
 
+/** Upper bound for any request: long enough for CV analysis and agent answers, short enough that nothing spins forever. */
+const REQUEST_TIMEOUT_MS = 90_000;
+
 async function request<T>(method: string, path: string, body?: Body, signal?: AbortSignal): Promise<T> {
   const token = await getAccessToken();
   // The locale lets Orbit Agent and server-generated guidance answer in the user's language.
@@ -27,17 +30,32 @@ async function request<T>(method: string, path: string, body?: Body, signal?: Ab
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
 
+  // One controller carries both the caller's cancellation (e.g. TanStack Query) and the timeout.
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener('abort', onAbort, { once: true });
+
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
-      signal,
+      signal: controller.signal,
     });
   } catch (error) {
+    if (timedOut) throw new ApiError('TIMEOUT', translate('error.timeout'), 0, true);
     if ((error as Error).name === 'AbortError') throw error;
     throw new ApiError('NETWORK_ERROR', translate('error.network'), 0, true);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
   }
 
   let payload: ApiResponse<T> | null = null;
